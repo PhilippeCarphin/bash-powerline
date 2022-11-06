@@ -109,15 +109,11 @@ __prompt_section(){
     printf "\[\033[0m\]"
 }
 
-__git-pwd() {
+__git_pwd() {
     local repo_dir=$(git rev-parse --show-toplevel 2>/dev/null)
     local outer=$(basename $repo_dir)
     local inner=$(git rev-parse --show-prefix 2>/dev/null)
-    if [[ -z ${inner} ]] ; then
-        printf "${outer}"
-    else
-        printf "${outer}/${inner}"
-    fi
+    printf "\[\033[1;4m\]${outer}\[\033[22;24m\]${inner:+/${inner}}"
 }
 
 __prompt(){
@@ -179,7 +175,7 @@ __prompt(){
         #
         # Directory section followed by git section
         #
-        __prompt_section "$(git_pwd)" "${c_dir}" "${git_color}"
+        __prompt_section "$(__git_pwd)" "${c_dir}" "${git_color}"
 
         #
         # Git section followed by nothing
