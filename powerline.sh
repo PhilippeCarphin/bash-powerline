@@ -18,6 +18,9 @@ fi
 #   anything else and \033[48;5;m resets the background without resetting
 #   anything else.  This is why the last prompt section can leave ${bg_next}
 #   empty.
+#   NOTE!!: In Iterm.app on MacOS, \033[38;5;m will create blinking text
+#   instead of resetting just the foreground color but not in a TMUX session
+#   in Iterm.app.
 #
 # - Because everything that is output is going in PS1, every sequence non
 #   non-printing characters must be enclosed in \[...\]
@@ -34,7 +37,17 @@ __prompt_triangle(){
     # and the next.
     local fg=$1
     local bg=$2
-    printf "\[\033[38;5;${fg}m\033[48;5;${bg}m\]\ue0b0\[\033[0m\]"
+    if [[ -n "${fg}" ]] ; then
+        fg_code="38;5;${fg}"
+    else
+        fg_code="39"
+    fi
+    if [[ -n "${bg}" ]] ; then
+        bg_code="48;5;${bg}"
+    else
+        bg_code="49"
+    fi
+    printf "\[\033[0m\033[${fg_code}m\033[${bg_code}m\]\ue0b0\[\033[0m\]"
 }
 
 __prompt_section(){
@@ -42,8 +55,21 @@ __prompt_section(){
     local bg_section=$2
     local bg_next=$3
     local fg_section=$4
-    printf "\[\033[48;5;${bg_section}m\033[38;5;${fg_section}m\]%s%s\[\033[0m\]" \
-        "${content}" "$(__prompt_triangle ${bg_section} ${bg_next})"
+
+    if [[ -n "${fg_section}" ]] ; then
+        fg_code="38;5;${fg_section}"
+    else
+        fg_code="39"
+    fi
+
+    if [[ -n "${bg_section}" ]] ; then
+        bg_code="48;5;${bg_section}"
+    else
+        bg_code="49"
+    fi
+
+    printf "\[\033[${bg_code}m\033[${fg_code}m\]%s$(__prompt_triangle "${bg_section}" "${bg_next}")\[\033[0m\]" \
+        "${content}"
 }
 
 __git-pwd() {
