@@ -70,8 +70,8 @@ __prompt(){
     local c_user=27
     local c_dir=33
     local c_git_headless=52
-    local c_git_dirty=136
-    local c_git_clean=28
+    local c_git_dirty=184
+    local c_git_clean=2
     local c_exit_code_success=34
     local c_exit_code_failure=9
 
