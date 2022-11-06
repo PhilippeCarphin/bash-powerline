@@ -64,12 +64,49 @@ __prompt_section(){
 
     if [[ -n "${bg_section}" ]] ; then
         bg_code="48;5;${bg_section}"
+        # Triangle's foreground is equal to background of this section
+        fgt_code="38;5;${bg_section}"
     else
         bg_code="49"
+        # To get the color of the default background into the foreground
+        # of the triangle, we have to do something super complicated
     fi
 
-    printf "\[\033[${bg_code}m\033[${fg_code}m\]%s$(__prompt_triangle "${bg_section}" "${bg_next}")\[\033[0m\]" \
-        "${content}"
+    if [[ -n "${bg_next}" ]] ; then
+        bgt_code="48;5;${bg_next}"
+    else
+        bgt_code="49"
+    fi
+    # echo "${content}" >&2
+    printf "\[\033[${bg_code}m\033[${fg_code}m\]%s" "${content}"
+
+    if [[ -n "${bg_section}" ]] ; then
+        printf "\[\033[0m\033[${fgt_code}m\033[${bgt_code}m\]\ue0b0"
+    else
+        # If the background of the section is default, we can't set the
+        # foreground of the triangle to default foreground.  Because that's
+        # not the same color as the color of the default background.
+        #
+        # The only thing we can do is set the background of the traiangle to
+        # default and invert so that the foreground gets the color of the
+        # default background.  So we set the *foreground* equal to the
+        # background of the next section and we set the *background* to
+        # default.  Then we invert.  Then the foreground of the triangle
+        # matches background of the section and the background matches the
+        # background of the next section.
+        if [[ -n "${bg_next}" ]] ; then
+            printf "\[\033[0m\033[49m\033[38;5;${bg_next}m\033[7m\]\ue0b0"
+        else
+            # This is the case where the background of the next section is
+            # also default so we just print a '' between them with some spaces
+            # because otherwise the demarcation is not visible.
+            printf " \ue0b1 "
+        fi
+        #
+        # I really feel like removing this part since it doubles the size of
+        # the code
+    fi
+    printf "\[\033[0m\]"
 }
 
 __git-pwd() {
