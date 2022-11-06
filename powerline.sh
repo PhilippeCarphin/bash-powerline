@@ -101,7 +101,7 @@ __prompt(){
     if info="$(git rev-parse --git-dir 2>/dev/null)" ; then
         local g="${info%$'\n'}"
         local b="$(git symbolic-ref HEAD 2>/dev/null)"
-        local git_part="$(__git_ps1)"
+        local git_part="$(__git_ps1 "(%s)")"
         local head
         __git_eread "$g/HEAD" head
         b="${head#ref: }"
