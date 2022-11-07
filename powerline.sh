@@ -5,6 +5,43 @@ if ! source ~/.git-prompt.sh ; then
     return 1
 fi
 
+__next_line=""
+__next_line_mode(){
+    if [[ -z "${__next_line}" ]] ; then
+        __next_line="ON"
+    else
+        __next_line=""
+    fi
+}
+
+__demo=""
+__demo_mode(){
+    if [[ -z "${__demo}" ]] ; then
+        __demo="ON"
+    else
+        __demo=""
+    fi
+}
+
+# The separator's foreground is made to match the background of the section
+# to its left and it's background is made to match the section to its right
+# A ''
+__powerline_separator="\ue0b0"
+
+# Supported by the default font of Windows Terminal
+# A fade between the colors of each prompt segment using '▓▒░'
+# __powerline_separator="\u2593\u2592\u2591"
+
+# A square in the middle of the line '■'
+# __powerline_separator="\u25A0"
+
+# A small triangle '►'
+# __powerline_separator="\u25BA"
+# __powerline_separator=""
+
+# A ''
+__powerline_separator_same_color="\ue0b1"
+
 # Notes:
 # - Setting colors from the color cube and extra colors
 #   \033[38;5;⟨n⟩m Select foreground color
@@ -13,6 +50,8 @@ fi
 #     8- 15:  high intensity colors (as in \033[<90–97>m)
 #    16-231:  6 × 6 × 6 cube (216 colors): 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
 #   232-255:  grayscale from dark to light in 24 steps
+#
+# 
 #
 # - Using \033[38;5;m resets the foreground color to default without changing
 #   anything else and \033[48;5;m resets the background without resetting
@@ -65,17 +104,17 @@ __prompt_section(){
     if [[ -n "${bg_section}" ]] ; then
         # Triangle's foreground is equal to background of this section
         local fgt_code="38;5;${bg_section}"
-        printf "\[\033[0m\033[${fgt_code}m\033[${bgt_code}m\]\ue0b0"
+        printf "\[\033[0m\033[${fgt_code}m\033[${bgt_code}m\]${__powerline_separator}"
     else
         if [[ -n "${bg_next}" ]] ; then
             # To get the default background color into the triangles's foreground
             # we set the background to default and the foreground equal to the
             # next section's background and invert the two using code 7.
-            printf "\[\033[0m\033[49m\033[38;5;${bg_next}m\033[7m\]\ue0b0"
+            printf "\[\033[0m\033[49m\033[38;5;${bg_next}m\033[7m\]${__powerline_separator}"
         else
             # This is the case where both this section and the next have default
             # background.  Then we just print a ''
-            printf " \ue0b1 "
+            printf "${__powerline_separator_same_color}"
         fi
     fi
     printf "\[\033[0m\]"
@@ -96,15 +135,17 @@ __prompt(){
     # needlessly rerun here to decide how to color the git part.  For now
     # this does't cause any slowness.
     #
-    local c_host_bg=21
-    local c_host_fg=14
-    local c_user=27
-    local c_dir=33
+    local c_host_bg=27
+    local c_host_fg=
+    local c_user=33
+    local c_dir=74
+    local c_dir_fg=
     local c_git_headless=52
     local c_git_dirty=184
     local c_git_clean=2
     local c_exit_code_success=34
     local c_exit_code_failure=9
+    local c_next_line=27
 
     #
     # Exit code section, followed by host section
@@ -149,7 +190,7 @@ __prompt(){
         #
         # Directory section followed by git section
         #
-        __prompt_section "$(__git_pwd)" "${c_dir}" "${git_color}"
+        __prompt_section "$(__git_pwd)" "${c_dir}" "${git_color}" "${c_dir_fg}"
 
         #
         # Git section followed by nothing
@@ -159,14 +200,23 @@ __prompt(){
         #
         # Directory section followed by nothing
         #
-        __prompt_section "\\w" "${c_dir}"
+        __prompt_section "\\w" "${c_dir}" "" "${c_dir_fg}"
+    fi
+    if [[ -n ${__next_line} ]] ; then
+        printf "%s" "\n"
+        __prompt_section "$" "${c_next_line}" "" ""
     fi
 }
 
 __set_ps1(){
     local previous_exit_code=$?
-    PS1="$(__prompt ${previous_exit_code}) "
+    if [[ -n "${__demo}" ]] ; then
+        PS1='\n $ '
+    else
+        PS1="$(__prompt ${previous_exit_code}) "
+    fi
 }
+PS2="$(__prompt_section ">" "5" "" "") "
 
 PROMPT_COMMAND=__set_ps1
 
