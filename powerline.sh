@@ -65,59 +65,44 @@ __powerline_separator_same_color="\ue0b1"
 #   non-printing characters must be enclosed in \[...\]
 #
 
+__number_to_background_code(){
+    if [[ -n ${1} ]] ; then
+        echo "48;5;${1}"
+    else
+        echo "49"
+    fi
+}
+
+__number_to_foreground_code(){
+    if [[ -n ${1} ]] ; then
+        echo "38;5;${1}"
+    else
+        echo "39"
+    fi
+}
+
 #
-# Print a section of the powerline with a triangle at the end.  You need
-# to specify the background of the next section because the triangle's
-# background has to match.  That's how I chose to do it.  If the second
-# argument is empty, that means default background.
+# Draws a prompt segment without the triangle.  When drawing the prompt,
+# calle this function to draw 
+#
 __prompt_section(){
     local content=$1
     local bg_section=$2
-    local bg_next=$3
     local fg_section=$4
 
-    local fg_code
-    if [[ -n "${fg_section}" ]] ; then
-        fg_code="38;5;${fg_section}"
-    else
-        fg_code="39"
-    fi
+    local fg_code=$(__number_to_foreground_code ${fg_section})
+    local bg_code=$(__number_to_background_code ${bg_section})
 
-    local bg_code
-    if [[ -n "${bg_section}" ]] ; then
-        bg_code="48;5;${bg_section}"
-    else
-        bg_code="49"
-    fi
-
-    local bgt_code
-    if [[ -n "${bg_next}" ]] ; then
-        bgt_code="48;5;${bg_next}"
-    else
-        bgt_code="49"
-    fi
-
+    # Print the section's content
     printf "\[\033[${bg_code}m\033[${fg_code}m\]%s" "${content}"
+}
 
-    # Print the triangle whose foreground matches the section background
-    # and whose background matches the background or the next section
-    if [[ -n "${bg_section}" ]] ; then
-        # Triangle's foreground is equal to background of this section
-        local fgt_code="38;5;${bg_section}"
-        printf "\[\033[0m\033[${fgt_code}m\033[${bgt_code}m\]${__powerline_separator}"
-    else
-        if [[ -n "${bg_next}" ]] ; then
-            # To get the default background color into the triangles's foreground
-            # we set the background to default and the foreground equal to the
-            # next section's background and invert the two using code 7.
-            printf "\[\033[0m\033[49m\033[38;5;${bg_next}m\033[7m\]${__powerline_separator}"
-        else
-            # This is the case where both this section and the next have default
-            # background.  Then we just print a ''
-            printf "${__powerline_separator_same_color}"
-        fi
-    fi
-    printf "\[\033[0m\]"
+__prompt_triangle(){
+    local bg_left=$1
+    local bg_right=$2
+    local fg_code=$(__number_to_foreground_code ${bg_left})
+    local bg_code=$(__number_to_background_code ${bg_right})
+    printf "\[\033[0m\033[${fg_code}m\033[${bg_code}m\]${__powerline_separator}\[\033[0m\]"
 }
 
 __git_pwd() {
@@ -128,13 +113,8 @@ __git_pwd() {
 }
 
 __prompt(){
-    #
-    # Note that the git commands are copied from git-prompt.sh so some work
-    # is done twice so that I can access the info from some local variables
-    # in the function __git_ps1.  There are up to 4 git commands that are
-    # needlessly rerun here to decide how to color the git part.  For now
-    # this does't cause any slowness.
-    #
+    local previous_exit_code=${1}
+
     local c_host_bg=27
     local c_host_fg=
     local c_user=33
@@ -150,7 +130,6 @@ __prompt(){
     #
     # Exit code section, followed by host section
     #
-    local previous_exit_code=${1}
     local c_exit_code
     if [[ ${previous_exit_code} == 0 ]] ; then
         c_exit_code="${c_exit_code_success}"
@@ -158,20 +137,26 @@ __prompt(){
         c_exit_code="${c_exit_code_failure}"
     fi
     __prompt_section " ${previous_exit_code} " "${c_exit_code}" "${c_host_bg}" "0"
+    __prompt_triangle "${c_exit_code}" "${c_host_bg}"
 
     #
     # Host section followed by user section
     #
     __prompt_section "\\h" "${c_host_bg}" "${c_user}" "${c_host_fg}"
+    __prompt_triangle "${c_host_bg}" "${c_user}"
 
     #
     # Host section followed by directory section
     #
     __prompt_section "\\u" "${c_user}" "${c_dir}"
+    __prompt_triangle "${c_user}" "${c_dir}"
 
     local g
     local info
     local git_color
+    # PS1=""
+    # __git_ps1 "." "." "(%s asdfasd)"
+    # echo "PS1 after __git_ps1 = ${PS1}"
     if info="$(git rev-parse --git-dir 2>/dev/null)" ; then
         local g="${info%$'\n'}"
         local b="$(git symbolic-ref HEAD 2>/dev/null)"
@@ -191,20 +176,24 @@ __prompt(){
         # Directory section followed by git section
         #
         __prompt_section "$(__git_pwd)" "${c_dir}" "${git_color}" "${c_dir_fg}"
+        __prompt_triangle "${c_dir}" "${git_color}"
 
         #
         # Git section followed by nothing
         #
         __prompt_section "${git_part}" "${git_color}" "" "0"
+        __prompt_triangle "${git_color}" ""
     else
         #
         # Directory section followed by nothing
         #
         __prompt_section "\\w" "${c_dir}" "" "${c_dir_fg}"
+        __prompt_triangle "${c_dir}" ""
     fi
     if [[ -n ${__next_line} ]] ; then
         printf "%s" "\n"
         __prompt_section "$" "${c_next_line}" "" ""
+        __prompt_triangle "${c_host_bg}" ""
     fi
 }
 
@@ -216,7 +205,7 @@ __set_ps1(){
         PS1="$(__prompt ${previous_exit_code}) "
     fi
 }
-PS2="$(__prompt_section ">" "5" "" "") "
+PS2="$(__prompt_section ">" "5" "" ""; __prompt_triangle "5" "") "
 
 PROMPT_COMMAND=__set_ps1
 
