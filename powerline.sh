@@ -8,10 +8,12 @@ GIT_PS1_SHOWUNTRACKEDFILES=1
 GIT_PS1_SHOWUPSTREAM=verbose
 
 __next_line_mode(){
-    if [[ -z "${__next_line}" ]] ; then
+    if [[ "${1}" != 0 ]] && ( [[ "${1}" == 1 ]] || [[ -z "${__next_line}" ]] ) ; then
         __next_line="ON"
+        PS2=${__next_line_ps2}
     else
         __next_line=""
+        PS2=${__normal_ps2}
     fi
 }
 
@@ -180,14 +182,6 @@ __prompt(){
 
     local info
     if info="$(git rev-parse --git-dir 2>/dev/null)" ; then
-        # Use single-argument form of __git_ps1 to get the text of the
-        # git part of the prompt.
-        local git_part
-        if is_git_submodule ; then
-            git_part="$(__git_ps1 " %s \033[1;4mSM\033[21;24m ")"
-        else
-            git_part="$(__git_ps1 " %s")"
-        fi
         # Copy somt code from git-prompt.sh to determine what color to use
         # for the git part of the prompt.
         local git_color
@@ -196,14 +190,27 @@ __prompt(){
         local head
         __git_eread "$g/HEAD" head
         b="${head#ref: }"
+        local git_extra=""
         if [[ "${head}" == "${b}" ]] ; then
             git_color="${c_git_headless}"
+            git_extra="$(git_detached_branch)"
+            if [[ -n ${git_extra} ]] ; then
+                git_extra=" [${git_extra}]"
+            fi
         elif git diff --no-ext-diff --quiet \
           && git diff --no-ext-diff --cached --quiet ; then
             git_color="${c_git_clean}"
         else
             git_color="${c_git_dirty}"
             git_part="${git_part} $(git_time_since_last_commit)"
+        fi
+        # Use single-argument form of __git_ps1 to get the text of the
+        # git part of the prompt.
+        local git_part
+        if is_git_submodule ; then
+            git_part="$(__git_ps1 " %s${git_extra} \033[1;4mSM\033[21;24m ")"
+        else
+            git_part="$(__git_ps1 " %s${git_extra}")"
         fi
 
         #
@@ -257,7 +264,9 @@ __set_ps1(){
 }
 
 # Cool PS2 that goes up and changes the last bit of PS1 in Next line mode
-PS2="\[\r\033[A\033[1;105m\]>\[\033[35;49m\]\[\033[B\r\\033[105;39m\]>\[\033[35;49m\]\[\033[0m\] "
+__next_line_ps2="\[\r\033[A\033[1;105m\]>\[\033[35;49m\]\[\033[B\r\\033[105;39m\]>\[\033[35;49m\]\[\033[0m\] "
+__normal_ps2="\[\033[1;105m\]>\[\033[35;49m\]\[\033[0m\]"
+PS2=${__normal_ps2}
 # - beginning of line
 # - up one line (\033[A)
 # - ovewrite white on blue $ followed by blue '' on default bg by the same thing but with purple instead of blue
@@ -291,6 +300,10 @@ __phil_ps1_deal_with_vscode(){
     if [[ -n ${__vsc_status-} ]] ; then
         previous_exit_code=${__vsc_status}
     fi
+}
+
+git_detached_branch(){
+    git branch -r --points-at HEAD --format='%(refname:short)'
 }
 
 git_time_since_last_commit() {
