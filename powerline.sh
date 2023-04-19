@@ -303,7 +303,9 @@ __phil_ps1_deal_with_vscode(){
 }
 
 git_detached_branch(){
-    git branch -r --points-at HEAD --format='%(refname:short)'
+    local branches=($(git branch -r --points-at HEAD --format='%(refname:short)'))
+    local IFS=" "
+    echo "${branches[*]}"
 }
 
 git_time_since_last_commit() {
