@@ -7,20 +7,16 @@ fi
 GIT_PS1_SHOWUNTRACKEDFILES=1
 GIT_PS1_SHOWUPSTREAM=verbose
 
-__next_line_mode(){
-    if [[ "${1}" != 0 ]] && ( [[ "${1}" == 1 ]] || [[ -z "${__next_line}" ]] ) ; then
-        __next_line="ON"
-        PS2=${__next_line_ps2}
-    else
-        __next_line=""
-        PS2=${__normal_ps2}
-    fi
-}
-
 is_git_submodule(){
     [[ -n $(git rev-parse --show-superproject-working-tree 2>/dev/null) ]]
 }
 
+#
+# For when you want to demonstrate something by running some commands
+# and copy-pasting into an email or chat service:
+#
+# Make the prompt minimal and copy-paste friendly:
+#
 __demo_mode(){
     if [[ -z "${__demo}" ]] ; then
         __demo="ON"
@@ -37,48 +33,14 @@ __demo_mode(){
 # A ''
 __powerline_separator="\ue0b0"
 
-# Supported by the default font of Windows Terminal
-# A fade between the colors of each prompt segment using '▓▒░'
-# __powerline_separator="\u2593\u2592\u2591"
-
-# A square in the middle of the line '■'
-# __powerline_separator="\u25A0"
-
-# A small triangle '►'
-# __powerline_separator="\u25BA"
-# __powerline_separator=""
-
 # A ''
 __powerline_separator_same_color="\ue0b1"
-
-# Notes:
-# - Setting colors from the color cube and extra colors
-#   \033[38;5;⟨n⟩m Select foreground color
-#   \033[48;5;⟨n⟩m Select background color
-#     0-  7:  standard colors (as in \033[<30–37>m)
-#     8- 15:  high intensity colors (as in \033[<90–97>m)
-#    16-231:  6 × 6 × 6 cube (216 colors): 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
-#   232-255:  grayscale from dark to light in 24 steps
-#
-# 
-#
-# - Using \033[38;5;m resets the foreground color to default without changing
-#   anything else and \033[48;5;m resets the background without resetting
-#   anything else.  This is why the last prompt section can leave ${bg_next}
-#   empty.
-#   NOTE!!: In Iterm.app on MacOS, \033[38;5;m will create blinking text
-#   instead of resetting just the foreground color but not in a TMUX session
-#   in Iterm.app.
-#
-# - Because everything that is output is going in PS1, every sequence non
-#   non-printing characters must be enclosed in \[...\]
-#
 
 __number_to_background_code(){
     if [[ -n ${1} ]] ; then
         echo "48;5;${1}"
     else
-        echo "49"
+        echo "49" # Reset just the background
     fi
 }
 
@@ -86,13 +48,13 @@ __number_to_foreground_code(){
     if [[ -n ${1} ]] ; then
         echo "38;5;${1}"
     else
-        echo "39"
+        echo "39" # Reset just the foreground
     fi
 }
 
 #
 # Draws a prompt segment without the triangle.  When drawing the prompt,
-# calle this function to draw 
+# calle this function to draw
 #
 __prompt_section(){
     local content=$1
@@ -121,17 +83,8 @@ __git_pwd() {
     printf "\[\033[1;4m\]${outer}\[\033[22;24m\]${inner:+/${inner}}"
 }
 
-__powerline_job_colors(){
-    c_host_bg=52 #90
-    c_jobid=88 #127
-    # c_user=124 # 164
-    # c_dir=160 # 170
-}
-
-
 __prompt(){
     local previous_exit_code=${1}
-
     local c_host_bg=27
     local c_host_fg=
     local c_jobid=130
@@ -145,7 +98,8 @@ __prompt(){
     local c_exit_code_failure=9
     local c_next_line=27
     if [[ -n ${PBS_JOBID} ]] ; then
-        __powerline_job_colors
+        c_host_bg=52 #90
+        c_jobid=88 #127
     fi
 
     #
@@ -174,7 +128,7 @@ __prompt(){
     fi
 
     #
-    # Host section followed by directory section
+    # User section followed by directory and git section
     #
     __prompt_section "\\u" "${c_user}"
     __prompt_triangle "${c_user}" "${c_dir}"
@@ -231,11 +185,10 @@ __prompt(){
         __prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
         __prompt_triangle "${c_dir}" ""
     fi
-    if [[ -n ${__next_line} ]] ; then
-        printf "%s" "\n"
-        __prompt_section "$" "${c_next_line}" 15
-        __prompt_triangle "${c_next_line}" ""
-    fi
+
+    printf "%s" "\n"
+    __prompt_section "$" "${c_next_line}" 15
+    __prompt_triangle "${c_next_line}" ""
 }
 
 __set_ps1(){
@@ -263,24 +216,10 @@ __set_ps1(){
     fi
 }
 
-# Cool PS2 that goes up and changes the last bit of PS1 in Next line mode
-__next_line_ps2="\[\r\033[A\033[1;105m\]>\[\033[35;49m\]\[\033[B\r\\033[105;39m\]>\[\033[35;49m\]\[\033[0m\] "
-__normal_ps2="\[\033[1;105m\]>\[\033[35;49m\]\[\033[0m\]"
-PS2=${__normal_ps2}
-# - beginning of line
-# - up one line (\033[A)
-# - ovewrite white on blue $ followed by blue '' on default bg by the same thing but with purple instead of blue
-# - go down one line (\033[B)
-# - beginning of line \r
-# - Write a white '>' on purple bg followed by a purple '' on default bg.
-# Only works in "next_line_mode"
-# PS2="$(__prompt_section ">" "5" "15" ""; __prompt_triangle "5" "") "
-
+PS2="\[\033[1;105m\]>\[\033[35;49m\]\[\033[0m\]"
 PROMPT_COMMAND=__set_ps1
 
 ###############################################################################
-# At some point, inside VSCode shell, the displayed exit code was always 1
-# regardless of whether or not the previous command had succeeded or not.
 #
 # VSCode launches integrated terminals with
 #
@@ -290,11 +229,15 @@ PROMPT_COMMAND=__set_ps1
 # - loads either the ~/.bashrc or one of ~/.bash_profile, ~/.bash_login, ~/.profile
 #   based on VSCODE_SHELL_LOGIN (instead of passing -l to the command becasue it is
 #   incompatible with --init-file)
+# - Does something like 'PROMPT_COMMAND="<vscode stuff>; $PROMPT_COMMAND" so
+#   that between the end of the previous command and the time *my* PROMPT_COMMAND
+#   gets run, <vscode stuff> will have run.  At that point, the value of
+#   $? no longer represents the status of the last command that the *user* ran.
+# - VSCode inserts its stuff where $? does represent the exit status of the last
+#   command.  It stores it in __vsc_status.
 #
-# __vsc_prompt_command_original which stores the status of the previous command
-# in __vsc_status and then does stuff to let VSCode know whether the command
-# succeeded or failed and then calls what I had set as the PROMPT_COMMAND.
-# And by the time __my_git_ps1 function is called $? is always 1!
+# If __vsc_status is non-empty, then we are a VSCode integrated shell and we
+# should use __vsc_status as the exit code of the previous command.
 ################################################################################
 __phil_ps1_deal_with_vscode(){
     if [[ -n ${__vsc_status-} ]] ; then
@@ -302,6 +245,11 @@ __phil_ps1_deal_with_vscode(){
     fi
 }
 
+# In detached head, it may be useful to know that we are on a commit that is
+# pointed to by a remote branch.
+#
+# This function lists the remote branches that are pointing on HEAD and echos
+# the list of these branches joined by a space.
 git_detached_branch(){
     local branches=($(git branch -r --points-at HEAD --format='%(refname:short)'))
     local IFS=" "
