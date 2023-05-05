@@ -72,47 +72,80 @@ __prompt_section(){
 __prompt_triangle(){
     local bg_left=$1
     local bg_right=$2
-    local fg_code=$(__number_to_foreground_code ${bg_left})
     local bg_code=$(__number_to_background_code ${bg_right})
-    printf "\[\033[0m\033[${fg_code}m\033[${bg_code}m\]${__powerline_separator}\[\033[0m\]"
+    if [[ "${bg_left}" == "${bg_right}" ]] ; then
+        local fg_code=$(__number_to_foreground_code 240)
+        printf "\[\033[0m\033[${bg_code}m\033[${fg_code}m\]${__powerline_separator_same_color}\[\033[0m\]"
+    else
+        local fg_code=$(__number_to_foreground_code ${bg_left})
+        printf "\[\033[0m\033[${fg_code}m\033[${bg_code}m\]${__powerline_separator}\[\033[0m\]"
+    fi
 }
 
 __git_pwd() {
     local repo_dir=$(git rev-parse --show-toplevel 2>/dev/null)
-    local outer=$(basename $repo_dir)
+    local outer=$(basename $repo_dir 2>/dev/null)
     local inner=$(git rev-parse --show-prefix 2>/dev/null)
     printf "\[\033[1;4m\]${outer}\[\033[22;24m\]${inner:+/${inner}}"
 }
 
 __prompt(){
     local previous_exit_code=${1}
-    local c_host_bg=27
-    local c_host_fg=
-    local c_jobid=130
-    local c_user=33
-    local c_dir=74
-    local c_dir_fg=15
-    local c_git_headless=88
-    local c_git_dirty=184
-    local c_git_clean=2
-    local c_exit_code_success=34
-    local c_exit_code_failure=9
-    local c_next_line=27
-    if [[ -n ${PBS_JOBID} ]] ; then
-        c_host_bg=52 #90
-        c_jobid=88 #127
+    if [[ ${__powerline_grayscale} == "" ]] ; then
+        local c_host_bg=27
+        local c_host_fg=
+        local c_jobid=130
+        local c_user=33
+        local c_dir=74
+        local c_dir_fg=15
+        local c_git_headless=88
+        local c_git_dirty=184
+        local c_git_clean=2
+        local c_exit_code_success=34
+        local c_exit_code_failure=9
+        local c_next_line=27
+        if [[ -n ${PBS_JOBID} ]] ; then
+            c_host_bg=52 #90
+            c_jobid=88 #127
+        fi
+    else
+        GIT_PS1_SHOWDIRTYSTATE="yes because black and white is not obvious enough"
+        local c_host_bg=234
+        local c_host_fg=
+        local c_jobid=130
+        local c_user=236
+        local c_dir=238
+        local c_dir_fg=15
+        local c_git_headless=233
+        local c_git_headless_fg=7
+        local c_git_dirty=240
+        # local c_git_dirty_fg=240
+        local c_git_clean=244
+        # local c_git_clean_fg=240
+        local c_exit_code_success=242
+        local c_exit_code_success_fg=
+        local c_exit_code_failure=233
+        local c_exit_code_failure_fg=7
+        local c_next_line=234
+        if [[ -n ${PBS_JOBID} ]] ; then
+            c_host_bg=233 #90
+            c_jobid=233 #127
+        fi
     fi
 
     #
     # Exit code section, followed by host section
     #
     local c_exit_code
+    local c_exit_code_fg
     if [[ ${previous_exit_code} == 0 ]] ; then
         c_exit_code="${c_exit_code_success}"
+        c_exit_code_fg="${c_exit_code_success_fg}"
     else
         c_exit_code="${c_exit_code_failure}"
+        c_exit_code_fg="${c_exit_code_failure_fg}"
     fi
-    __prompt_section " ${previous_exit_code} " "${c_exit_code}" "0"
+    __prompt_section " ${previous_exit_code} " "${c_exit_code}" "${c_exit_code_failure_fg}"
     __prompt_triangle "${c_exit_code}" "${c_host_bg}"
 
     #
@@ -140,6 +173,7 @@ __prompt(){
         # Copy somt code from git-prompt.sh to determine what color to use
         # for the git part of the prompt.
         local git_color
+        local git_color_fg
         local g="${info%$'\n'}"
         local b="$(git symbolic-ref HEAD 2>/dev/null)"
         local head
@@ -148,6 +182,7 @@ __prompt(){
         local git_extra=""
         if [[ "${head}" == "${b}" ]] ; then
             git_color="${c_git_headless}"
+            git_color_fg="${c_git_headless_fg}"
             git_extra="$(git_detached_branch)"
             if [[ -n ${git_extra} ]] ; then
                 git_extra=" [${git_extra}]"
@@ -177,7 +212,7 @@ __prompt(){
         #
         # Git section followed by nothing
         #
-        __prompt_section "${git_part}" "${git_color}" "0"
+        __prompt_section "${git_part}" "${git_color}" "${git_color_fg}"
         __prompt_triangle "${git_color}" ""
     else
         #
