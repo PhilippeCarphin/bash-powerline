@@ -99,8 +99,11 @@ __prompt(){
         local c_dir=74
         local c_dir_fg=15
         local c_git_headless=88
+        local c_git_headless_fg=0
         local c_git_dirty=184
+        local c_git_dirty_fg=0
         local c_git_clean=2
+        local c_git_clean_fg=0
         local c_exit_code_success=34
         local c_exit_code_failure=9
         local c_next_line=27
@@ -187,13 +190,16 @@ __prompt(){
             if [[ -n ${git_extra} ]] ; then
                 git_extra=" [${git_extra}]"
             fi
-        elif git diff --no-ext-diff --quiet \
-          && git diff --no-ext-diff --cached --quiet ; then
+        elif git diff --no-ext-diff --quiet 2>/dev/null \
+          && git diff --no-ext-diff --cached --quiet 2>/dev/null ; then
             git_color="${c_git_clean}"
+            git_color_fg="${c_git_clean_fg}"
         else
             git_color="${c_git_dirty}"
+            git_color_fg="${c_git_dirty_fg}"
             git_part="${git_part} $(git_time_since_last_commit)"
         fi
+
         # Use single-argument form of __git_ps1 to get the text of the
         # git part of the prompt.
         local git_part
@@ -287,7 +293,7 @@ __phil_ps1_deal_with_vscode(){
 # This function lists the remote branches that are pointing on HEAD and echos
 # the list of these branches joined by a space.
 git_detached_branch(){
-    local branches=($(git branch -r --points-at HEAD --format='%(refname:short)'))
+    local branches=($(git branch -r --points-at HEAD --format='%(refname:short)' 2>/dev/null) )
     local IFS=" "
     echo "${branches[*]}"
 }
@@ -301,7 +307,7 @@ git_time_since_last_commit() {
     fi
 
     local last_commit_unix_timestamp now_unix_timestamp seconds_since_last_commit
-    if ! last_commit_unix_timestamp=$(git log --pretty=format:'%at' -1 2> /dev/null) ; then
+    if ! last_commit_unix_timestamp=$(git log --pretty=format:'%at' -1 2>/dev/null) ; then
         return
     fi
     now_unix_timestamp=$(date +%s)
