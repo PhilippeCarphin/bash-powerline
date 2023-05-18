@@ -7,6 +7,7 @@ fi
 GIT_PS1_SHOWUNTRACKEDFILES=1
 GIT_PS1_SHOWUPSTREAM=verbose
 GIT_PS1_SHOWCONFLICTSTATE=1
+GIT_PS1_SHOWDIRTYSTATE=1
 
 is_git_submodule(){
     [[ -n $(git rev-parse --show-superproject-working-tree 2>/dev/null) ]]
