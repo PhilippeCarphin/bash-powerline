@@ -340,12 +340,12 @@ git_aggr_numstat(){
         printf "|"
     fi
     if ((total_files != 0)) ; then
-        printf "\033[31m*(${total_files}f,${total_ins}+,${total_del}-)"
+        printf "\[\033[31m\]*(${total_files}f,${total_ins}+,${total_del}-)"
     fi
     if ((stotal_files != 0)) ; then
-        printf "\033[32m+(${stotal_files}f,${stotal_ins}+,${stotal_del}-)"
+        printf "\[\033[32m\]+(${stotal_files}f,${stotal_ins}+,${stotal_del}-)"
     fi
-    printf "\033[39m"
+    printf "\[\033[39m\]"
 }
 
 
