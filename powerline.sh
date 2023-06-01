@@ -7,7 +7,7 @@ fi
 GIT_PS1_SHOWUNTRACKEDFILES=1
 GIT_PS1_SHOWUPSTREAM=verbose
 GIT_PS1_SHOWCONFLICTSTATE=1
-GIT_PS1_SHOWDIRTYSTATE=1
+GIT_PS1_SHOWDIRTYSTATE=
 
 is_git_submodule(){
     [[ -n $(git rev-parse --show-superproject-working-tree 2>/dev/null) ]]
@@ -198,7 +198,8 @@ __prompt(){
         else
             git_color="${c_git_dirty}"
             git_color_fg="${c_git_dirty_fg}"
-            git_part="${git_part} $(git_time_since_last_commit)"
+            # git_extra="${git_extra} $(git_time_since_last_commit)"
+            git_extra+="$(git_aggr_numstat)"
         fi
 
         # Use single-argument form of __git_ps1 to get the text of the
@@ -316,6 +317,34 @@ git_time_since_last_commit() {
 
     format_seconds $seconds_since_last_commit
 }
+
+git_aggr_numstat(){
+    local ins del filename
+    local total_ins=0
+    local total_del=0
+    local total_files=0
+    local stotal_ins=0
+    local stotal_del=0
+    local stotal_files=0
+    while read ins del filename ; do
+        (( total_del += del))
+        (( total_ins += ins))
+        (( total_files ++ ))
+    done < <(git diff --numstat "$@")
+    while read ins del filename ; do
+        (( stotal_del += del))
+        (( stotal_ins += ins))
+        (( stotal_files ++ ))
+    done < <(git diff --numstat --staged "$@")
+    if ((total_files != 0)) ; then
+        printf "\033[31m*(${total_files}f,${total_ins}+,${total_del}-)"
+    fi
+    if ((stotal_files != 0)) ; then
+        printf "\033[32m+(${stotal_files}f,${stotal_ins}+,${stotal_del}-)"
+    fi
+    echo ""
+}
+
 
 format_seconds(){
 	seconds=$1
