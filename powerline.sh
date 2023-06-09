@@ -10,7 +10,7 @@ GIT_PS1_SHOWCONFLICTSTATE=1
 GIT_PS1_SHOWDIRTYSTATE=
 
 is_git_submodule(){
-    [[ -n $(git rev-parse --show-superproject-working-tree 2>/dev/null) ]]
+    [[ -n $(command git rev-parse --show-superproject-working-tree 2>/dev/null) ]]
 }
 
 #
@@ -84,9 +84,9 @@ __prompt_triangle(){
 }
 
 __git_pwd() {
-    local repo_dir=$(git rev-parse --show-toplevel 2>/dev/null)
+    local repo_dir=$(command git rev-parse --show-toplevel 2>/dev/null)
     local outer=$(basename $repo_dir 2>/dev/null)
-    local inner=$(git rev-parse --show-prefix 2>/dev/null)
+    local inner=$(command git rev-parse --show-prefix 2>/dev/null)
     printf "\[\033[1;4m\]${outer}\[\033[22;24m\]${inner:+/${inner}}"
 }
 
@@ -173,13 +173,13 @@ __prompt(){
 
 
     local info
-    if info="$(git rev-parse --git-dir 2>/dev/null)" ; then
+    if info="$(command git rev-parse --git-dir 2>/dev/null)" ; then
         # Copy somt code from git-prompt.sh to determine what color to use
         # for the git part of the prompt.
         local git_color
         local git_color_fg
         local g="${info%$'\n'}"
-        local b="$(git symbolic-ref HEAD 2>/dev/null)"
+        local b="$(command git symbolic-ref HEAD 2>/dev/null)"
         local head
         __git_eread "$g/HEAD" head
         b="${head#ref: }"
@@ -191,8 +191,8 @@ __prompt(){
             if [[ -n ${git_extra} ]] ; then
                 git_extra=" [${git_extra}]"
             fi
-        elif git diff --no-ext-diff --quiet 2>/dev/null \
-          && git diff --no-ext-diff --cached --quiet 2>/dev/null ; then
+        elif command git diff --no-ext-diff --quiet 2>/dev/null \
+          && command git diff --no-ext-diff --cached --quiet 2>/dev/null ; then
             git_color="${c_git_clean}"
             git_color_fg="${c_git_clean_fg}"
         else
@@ -295,7 +295,7 @@ __phil_ps1_deal_with_vscode(){
 # This function lists the remote branches that are pointing on HEAD and echos
 # the list of these branches joined by a space.
 git_detached_branch(){
-    local branches=($(git branch -r --points-at HEAD --format='%(refname:short)' 2>/dev/null | command grep -v 'HEAD$') )
+    local branches=($(command git branch -r --points-at HEAD --format='%(refname:short)' 2>/dev/null | command grep -v 'HEAD$') )
     local IFS=","
     echo "${branches[*]}"
 }
@@ -303,13 +303,13 @@ git_detached_branch(){
 git_time_since_last_commit() {
     # This checks if we are in a repo an that there is a commit
     local repo_info
-    repo_info=$(git rev-parse --is-inside-work-tree 2>/dev/null)
+    repo_info=$(command git rev-parse --is-inside-work-tree 2>/dev/null)
     if [ -z "$repo_info" ] ; then
         return
     fi
 
     local last_commit_unix_timestamp now_unix_timestamp seconds_since_last_commit
-    if ! last_commit_unix_timestamp=$(git log --pretty=format:'%at' -1 2>/dev/null) ; then
+    if ! last_commit_unix_timestamp=$(command git log --pretty=format:'%at' -1 2>/dev/null) ; then
         return
     fi
     now_unix_timestamp=$(date +%s)
@@ -330,12 +330,12 @@ git_aggr_numstat(){
         (( total_del += del))
         (( total_ins += ins))
         (( total_files ++ ))
-    done < <(git diff --numstat "$@")
+    done < <(command git diff --numstat "$@")
     while read ins del filename ; do
         (( stotal_del += del))
         (( stotal_ins += ins))
         (( stotal_files ++ ))
-    done < <(git diff --numstat --staged "$@")
+    done < <(command git diff --numstat --staged "$@")
     if ((total_files != 0)) || ((stotal_files != 0)) ; then
         printf "|"
     fi
