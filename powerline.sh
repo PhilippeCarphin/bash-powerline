@@ -238,6 +238,12 @@ __prompt(){
 __set_ps1(){
     local previous_exit_code=$?
 
+    # I want the print otherwise I could get rid of two IF statements:
+    #   local reset="$(shopt -po xtrace)"
+    # which stores in 'reset' the command that I would need to run to
+    # set xtrace to what it is currently.  The other if to set it back
+    # could be replaced by simply doing
+    #   $reset
     local user_had_xtrace
     if shopt -op xtrace >/dev/null; then
         user_had_xtrace=true
@@ -319,6 +325,8 @@ git_time_since_last_commit() {
 }
 
 git_aggr_numstat(){
+    # NOTE: The process substitutions `<(...)` are non-posix so if
+    # we have `set -o posix`, bash is going to give weird errors
     local ins del filename
     local total_ins=0
     local total_del=0
