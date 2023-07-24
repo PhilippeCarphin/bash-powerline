@@ -247,13 +247,15 @@ __set_ps1(){
     local user_had_xtrace
     if shopt -op xtrace >/dev/null; then
         user_had_xtrace=true
-        printf "Disabling xtrace during prompt evaluation\n"
+        if ! [[ -v BASH_POWERLINE_XTRACE ]] ; then
+            printf "Disabling xtrace during prompt evaluation\n"
+            set +o xtrace
+        fi
     else
         user_had_xtrace=false
     fi
     __phil_ps1_deal_with_vscode
 
-    set +o xtrace
     if [[ -n "${__demo}" ]] ; then
         PS1="=> ${previous_exit_code}\n\n $ "
     else
@@ -261,8 +263,10 @@ __set_ps1(){
     fi
 
     if [[ "${user_had_xtrace}" == true ]] ; then
-        printf "Reenabling xtrace after prompt evaluation\n"
-        set -x
+        if ! [[ -v BASH_POWERLINE_XTRACE ]] ; then
+            printf "Reenabling xtrace after prompt evaluation\n"
+            set -x
+        fi
     fi
 }
 
