@@ -331,6 +331,10 @@ git_time_since_last_commit() {
 git_aggr_numstat(){
     # NOTE: The process substitutions `<(...)` are non-posix so if
     # we have `set -o posix`, bash is going to give weird errors
+    # For binary files, git diff --numstat shows
+    #   -   -   filename.bin
+    # and '-' cannot be used as a number.  If that is the case, we change
+    # their values to '1'.
     local ins del filename
     local total_ins=0
     local total_del=0
@@ -339,11 +343,19 @@ git_aggr_numstat(){
     local stotal_del=0
     local stotal_files=0
     while read ins del filename ; do
+        if [[ "${del}" == "-" ]] && [[ "${ins}" == "-" ]] ; then
+            del=1
+            ins=1
+        fi
         (( total_del += del))
         (( total_ins += ins))
         (( total_files ++ ))
     done < <(command git diff --numstat "$@")
     while read ins del filename ; do
+        if [[ "${del}" == "-" ]] && [[ "${ins}" == "-" ]] ; then
+            del=1
+            ins=1
+        fi
         (( stotal_del += del))
         (( stotal_ins += ins))
         (( stotal_files ++ ))
