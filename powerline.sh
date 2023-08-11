@@ -1,16 +1,23 @@
 #!/bin/bash
 
-if ! source ~/.git-prompt-phil.sh ; then
+if ! source ~/.git-prompt.sh ; then
     echo "${BASH_SOURCE[0]} expects ~/.git-prompt.sh to exist.  It can be obtained at 'https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh'.  Ideally the one corresponding to your version of git but I always just get the one from 'master' (this link).  There is always a chance that a new one will use git commands that your version of git does not have."
     return 1
 fi
-GIT_PS1_SHOWUNTRACKEDFILES=1
+GIT_PS1_SHOWUNTRACKEDFILES=
 GIT_PS1_SHOWUPSTREAM=verbose
 GIT_PS1_SHOWCONFLICTSTATE=1
 GIT_PS1_SHOWDIRTYSTATE=
 
 is_git_submodule(){
     [[ -n $(command git rev-parse --show-superproject-working-tree 2>/dev/null) ]]
+}
+
+nb_untracked_files(){
+    local n=$(command git ls-files ${repo_dir} --others --exclude-standard --directory | wc -l)
+    if [[ "${n}" != 0 ]] ; then
+        printf "\033[1;31m!U${n}!\033[0m"
+    fi
 }
 
 #
@@ -88,6 +95,18 @@ __git_pwd() {
     local outer=$(basename $repo_dir 2>/dev/null)
     local inner=$(command git rev-parse --show-prefix 2>/dev/null)
     printf "\[\033[1;4m\]${outer}\[\033[22;24m\]${inner:+/${inner}}"
+}
+
+__prompt_git_info(){
+    if ! info=($(command git rev-parse --show-toplevel --show-superproject-working-tree 2>/dev/null)) ; then
+        return 1
+    fi
+    repo_dir=${info[0]}
+    git_superproject=${info[1]}
+    if ! git_branch=$(command git symbolic-ref HEAD 2>/dev/null) ; then
+        git_headless=true
+        git_detached_branch=$(get_git_detached_branch)
+    fi
 }
 
 __prompt(){
@@ -172,22 +191,17 @@ __prompt(){
     __prompt_triangle "${c_user}" "${c_dir}"
 
 
-    local info
-    if info="$(command git rev-parse --git-dir 2>/dev/null)" ; then
-        # Copy somt code from git-prompt.sh to determine what color to use
-        # for the git part of the prompt.
-        local git_color
-        local git_color_fg
-        local g="${info%$'\n'}"
-        local b="$(command git symbolic-ref HEAD 2>/dev/null)"
-        local head
-        __git_eread "$g/HEAD" head
-        b="${head#ref: }"
+    local repo_dir
+    local git_superproject
+    local git_branch
+    local git_headless
+    local git_detached_branch
+    if __prompt_git_info ; then
         local git_extra=""
-        if [[ "${head}" == "${b}" ]] ; then
+        if [[ "${git_headless}" == true ]] ; then
             git_color="${c_git_headless}"
             git_color_fg="${c_git_headless_fg}"
-            git_extra="$(git_detached_branch)"
+            git_extra="$(get_git_detached_branch)"
             if [[ -n ${git_extra} ]] ; then
                 git_extra=" [${git_extra}]"
             fi
@@ -200,12 +214,13 @@ __prompt(){
             git_color_fg="${c_git_dirty_fg}"
             # git_extra="${git_extra} $(git_time_since_last_commit)"
             git_extra+="$(git_aggr_numstat)"
+            git_extra+="$(nb_untracked_files)"
         fi
 
         # Use single-argument form of __git_ps1 to get the text of the
         # git part of the prompt.
         local git_part
-        if is_git_submodule ; then
+        if [[ "${git_submodule}" != "" ]] ; then
             git_part="$(__git_ps1 " %s${git_extra} \033[1;4mSM\033[21;24m ")"
         else
             git_part="$(__git_ps1 " %s${git_extra}")"
@@ -304,7 +319,7 @@ __phil_ps1_deal_with_vscode(){
 #
 # This function lists the remote branches that are pointing on HEAD and echos
 # the list of these branches joined by a space.
-git_detached_branch(){
+get_git_detached_branch(){
     local branches=($(command git branch -r --points-at HEAD --format='%(refname:short)' 2>/dev/null | command grep -v 'HEAD$') )
     local IFS=","
     echo "${branches[*]}"
