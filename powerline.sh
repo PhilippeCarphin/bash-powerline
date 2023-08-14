@@ -14,9 +14,17 @@ is_git_submodule(){
 }
 
 nb_untracked_files(){
-    local n=$(command git ls-files ${repo_dir} --others --exclude-standard --directory | wc -l)
-    if [[ "${n}" != 0 ]] ; then
-        printf "\033[1;31m!U${n}!\033[0m"
+    local untracked=($(command git ls-files ${repo_dir} --others --exclude-standard --directory --no-empty-directory))
+    local files=0
+    local dirs=0
+    for f in "${untracked[@]}" ; do
+        case $f in
+            */) ((dirs++)) ;;
+            *) ((files++)) ;;
+        esac
+    done
+    if [[ "${files}" != 0 ]] || [[ "${dirs}" != 0 ]] ; then
+        printf "%s" "%%(${files}f,${dirs}d)"
     fi
 }
 
@@ -209,19 +217,20 @@ __prompt(){
           && command git diff --no-ext-diff --cached --quiet 2>/dev/null ; then
             git_color="${c_git_clean}"
             git_color_fg="${c_git_clean_fg}"
+            git_extra+="\[\033[1;38;5;124m\] $(nb_untracked_files)\[\033[22;39m\]"
         else
             git_color="${c_git_dirty}"
             git_color_fg="${c_git_dirty_fg}"
             # git_extra="${git_extra} $(git_time_since_last_commit)"
             git_extra+="$(git_aggr_numstat)"
-            git_extra+="$(nb_untracked_files)"
+            git_extra+="\[\033[1;31m\]$(nb_untracked_files)\[\033[22;39m\]"
         fi
 
         # Use single-argument form of __git_ps1 to get the text of the
         # git part of the prompt.
         local git_part
         if [[ "${git_submodule}" != "" ]] ; then
-            git_part="$(__git_ps1 " %s${git_extra} \033[1;4mSM\033[21;24m ")"
+            git_part="$(__git_ps1 " %s${git_extra} \[\033[1;4m\]SM\[\033[21;24m\] ")"
         else
             git_part="$(__git_ps1 " %s${git_extra}")"
         fi
