@@ -13,6 +13,27 @@ is_git_submodule(){
     [[ -n $(command git rev-parse --show-superproject-working-tree 2>/dev/null) ]]
 }
 
+repos_to_ignore=()
+if [[ -e ~/.config/powerline_repos_to_ignore.txt ]] ; then
+    while read repo ; do
+        if [[ "${repo}" == '#'* ]] ; then
+            continue
+        fi
+        repos_to_ignore+=("${repo}")
+    done < ~/.config/powerline_repos_to_ignore.txt
+fi
+
+
+__git_ps1_ignore_repo(){
+    for r in "${repos_to_ignore[@]}" ; do
+        if [[ "${r}" == "${repo_dir}" ]] ; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+
 nb_untracked_files(){
     local untracked=($(command git ls-files ${repo_dir} --others --exclude-standard --directory --no-empty-directory))
     local files=0
@@ -204,7 +225,9 @@ __prompt(){
     local git_branch
     local git_headless
     local git_detached_branch
-    if __prompt_git_info ; then
+    # Note: __git_ps1_ignore_repo looks at repo_dir which is set by
+    # __prompt_git_info so the order is important in the && below:
+    if __prompt_git_info && ! __git_ps1_ignore_repo ; then
         local git_extra=""
         if [[ "${git_headless}" == true ]] ; then
             git_color="${c_git_headless}"
