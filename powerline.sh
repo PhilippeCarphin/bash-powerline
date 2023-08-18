@@ -229,7 +229,7 @@ __prompt(){
         # Use single-argument form of __git_ps1 to get the text of the
         # git part of the prompt.
         local git_part
-        if [[ "${git_submodule}" != "" ]] ; then
+        if [[ "${git_superproject}" != "" ]] ; then
             git_part="$(__git_ps1 " %s${git_extra} \[\033[1;4m\]SM\[\033[21;24m\] ")"
         else
             git_part="$(__git_ps1 " %s${git_extra}")"
