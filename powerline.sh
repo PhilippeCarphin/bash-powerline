@@ -156,6 +156,9 @@ __prompt(){
         local c_exit_code_success=34
         local c_exit_code_failure=9
         local c_next_line=27
+        local c_unstaged_stats=1
+        local c_staged_stats=2
+        local c_untracked_stats=1
         if [[ -n ${PBS_JOBID} ]] ; then
             c_host_bg=52 #90
             c_jobid=88 #127
@@ -179,6 +182,9 @@ __prompt(){
         local c_exit_code_failure=233
         local c_exit_code_failure_fg=7
         local c_next_line=234
+        local c_unstaged_stats=249
+        local c_staged_stats=249
+        local c_untracked_stats=15
         if [[ -n ${PBS_JOBID} ]] ; then
             c_host_bg=233 #90
             c_jobid=233 #127
@@ -236,18 +242,24 @@ __prompt(){
             if [[ -n ${git_extra} ]] ; then
                 git_extra=" [${git_extra}]"
             fi
+            # Override colors in headless state
+            c_untracked_stats='7'
+            c_staged_stats='15'
+            c_unstaged_stats='7'
         elif command git diff --no-ext-diff --quiet 2>/dev/null \
           && command git diff --no-ext-diff --cached --quiet 2>/dev/null ; then
             git_color="${c_git_clean}"
             git_color_fg="${c_git_clean_fg}"
-            git_extra+="\[\033[1;38;5;124m\] $(nb_untracked_files)\[\033[22;39m\]"
+            c_untracked_stats='15'
+            # git_extra+="\[\033[1;38;5;${c_untracked_stats}m\] $(nb_untracked_files)\[\033[22;39m\]"
         else
             git_color="${c_git_dirty}"
             git_color_fg="${c_git_dirty_fg}"
-            # git_extra="${git_extra} $(git_time_since_last_commit)"
-            git_extra+="$(git_aggr_numstat)"
-            git_extra+="\[\033[1;31m\]$(nb_untracked_files)\[\033[22;39m\]"
         fi
+        # git_extra="${git_extra} $(git_time_since_last_commit)"
+        git_extra+="$(git_aggr_numstat)"
+        git_extra+="\[\033[1;38;5;${c_untracked_stats}m\]$(nb_untracked_files)\[\033[22;39m\]"
+
 
         # Use single-argument form of __git_ps1 to get the text of the
         # git part of the prompt.
@@ -411,10 +423,10 @@ git_aggr_numstat(){
         printf "|"
     fi
     if ((total_files != 0)) ; then
-        printf "\[\033[31m\]*(${total_files}f,${total_ins}+,${total_del}-)"
+        printf "\[\033[38;5;${c_unstaged_stats}m\]*(${total_files}f,${total_ins}+,${total_del}-)"
     fi
     if ((stotal_files != 0)) ; then
-        printf "\[\033[32m\]+(${stotal_files}f,${stotal_ins}+,${stotal_del}-)"
+        printf "\[\033[38;5;${c_staged_stats}m\]+(${stotal_files}f,${stotal_ins}+,${stotal_del}-)"
     fi
     printf "\[\033[39m\]"
 }
