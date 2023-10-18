@@ -164,8 +164,7 @@ __prompt(){
             c_jobid=88 #127
         fi
     else
-        GIT_PS1_SHOWDIRTYSTATE="yes because black and white is not obvious enough"
-        local c_host_bg=234
+        local c_host_bg=235
         local c_host_fg=
         local c_jobid=130
         local c_user=236
@@ -257,8 +256,14 @@ __prompt(){
             git_color_fg="${c_git_dirty_fg}"
         fi
         # git_extra="${git_extra} $(git_time_since_last_commit)"
-        git_extra+="$(git_aggr_numstat)"
-        git_extra+="\[\033[1;38;5;${c_untracked_stats}m\]$(nb_untracked_files)\[\033[22;39m\]"
+        local diff_stats="$(git_aggr_numstat)"
+        local untracked_stats="$(nb_untracked_files)"
+        if [[ -n ${diff_stats} ]] || [[ -n ${untracked_stats} ]] ; then
+            git_extra+="|"
+            git_extra+="${diff_stats}"
+
+            git_extra+="\[\033[1;38;5;${c_untracked_stats}m\]$(nb_untracked_files)\[\033[22;39m\]"
+        fi
 
 
         # Use single-argument form of __git_ps1 to get the text of the
@@ -419,9 +424,6 @@ git_aggr_numstat(){
         (( stotal_ins += ins))
         (( stotal_files ++ ))
     done < <(command git diff --numstat --staged "$@")
-    if ((total_files != 0)) || ((stotal_files != 0)) ; then
-        printf "|"
-    fi
     if ((total_files != 0)) ; then
         printf "\[\033[38;5;${c_unstaged_stats}m\]*(${total_files}f,${total_ins}+,${total_del}-)"
     fi
