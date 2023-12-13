@@ -238,60 +238,36 @@ __prompt(){
     local git_detached_branch
     # Note: __git_ps1_ignore_repo looks at repo_dir which is set by
     # __prompt_git_info so the order is important in the && below:
-    if __prompt_git_info && ! __git_ps1_ignore_repo ; then
-        local git_extra=""
-        if [[ "${git_headless}" == true ]] ; then
-            git_color="${c_git_headless}"
-            git_color_fg="${c_git_headless_fg}"
-            git_extra="$(get_git_detached_branch)"
-            if [[ -n ${git_extra} ]] ; then
-                git_extra=" [${git_extra}]"
-            fi
-            # Override colors in headless state
-            c_untracked_stats='7'
-            c_staged_stats='15'
-            c_unstaged_stats='7'
-        elif command git diff --no-ext-diff --quiet 2>/dev/null \
-          && command git diff --no-ext-diff --cached --quiet 2>/dev/null ; then
-            git_color="${c_git_clean}"
-            git_color_fg="${c_git_clean_fg}"
-            c_untracked_stats='15'
-            # git_extra+="\[\033[1;38;5;${c_untracked_stats}m\] $(nb_untracked_files)\[\033[22;39m\]"
+    if __prompt_git_info ; then
+        if __git_ps1_ignore_repo ; then
+            #
+            # Directory section followed by marker for ignored git repo
+            #
+            # __prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
+            __prompt_section "$(__git_pwd)" "${c_dir}" "${c_dir_fg}"
+            __prompt_triangle "${c_dir}" "${c_git_ignored_repo}"
+
+            #
+            # Marker for ignored git repo followed by nothing
+            #
+            __prompt_section "\033[1m g!\033[21m" "${c_git_ignored_repo}" "${c_git_ignored_repo_fg}"
+            __prompt_triangle "${c_git_ignored_repo}" ""
         else
-            git_color="${c_git_dirty}"
-            git_color_fg="${c_git_dirty_fg}"
+            local git_part
+            __ps1_set_git_part
+
+            #
+            # Directory section followed by git section
+            #
+            __prompt_section "$(__git_pwd)" "${c_dir}" "${c_dir_fg}"
+            __prompt_triangle "${c_dir}" "${git_color}"
+
+            #
+            # Git section followed by nothing
+            #
+            __prompt_section "${git_part}" "${git_color}" "${git_color_fg}"
+            __prompt_triangle "${git_color}" ""
         fi
-        # git_extra="${git_extra} $(git_time_since_last_commit)"
-        local diff_stats="$(git_aggr_numstat)"
-        local untracked_stats="$(nb_untracked_files)"
-        if [[ -n ${diff_stats} ]] || [[ -n ${untracked_stats} ]] ; then
-            git_extra+="|"
-            git_extra+="${diff_stats}"
-
-            git_extra+="\[\033[1;38;5;${c_untracked_stats}m\]$(nb_untracked_files)\[\033[22;39m\]"
-        fi
-
-
-        # Use single-argument form of __git_ps1 to get the text of the
-        # git part of the prompt.
-        local git_part
-        if [[ "${git_superproject}" != "" ]] ; then
-            git_part="$(__git_ps1 " %s${git_extra} \[\033[1;4m\]SM\[\033[21;24m\] ")"
-        else
-            git_part="$(__git_ps1 " %s${git_extra}")"
-        fi
-
-        #
-        # Directory section followed by git section
-        #
-        __prompt_section "$(__git_pwd)" "${c_dir}" "${c_dir_fg}"
-        __prompt_triangle "${c_dir}" "${git_color}"
-
-        #
-        # Git section followed by nothing
-        #
-        __prompt_section "${git_part}" "${git_color}" "${git_color_fg}"
-        __prompt_triangle "${git_color}" ""
     else
         #
         # Directory section followed by nothing
@@ -305,6 +281,53 @@ __prompt(){
     __prompt_triangle "${c_next_line}" ""
 }
 
+__ps1_set_git_part(){
+    local git_extra=""
+    if [[ "${git_headless}" == true ]] ; then
+        git_color="${c_git_headless}"
+        git_color_fg="${c_git_headless_fg}"
+        git_extra="$(get_git_detached_branch)"
+        if [[ -n ${git_extra} ]] ; then
+            git_extra=" [${git_extra}]"
+        fi
+        # Override colors in headless state
+        c_untracked_stats='7'
+        c_staged_stats='15'
+        c_unstaged_stats='7'
+    elif command git diff --no-ext-diff --quiet 2>/dev/null \
+      && command git diff --no-ext-diff --cached --quiet 2>/dev/null ; then
+        git_color="${c_git_clean}"
+        git_color_fg="${c_git_clean_fg}"
+        c_untracked_stats='15'
+        # git_extra+="\[\033[1;38;5;${c_untracked_stats}m\] $(nb_untracked_files)\[\033[22;39m\]"
+    else
+        git_color="${c_git_dirty}"
+        git_color_fg="${c_git_dirty_fg}"
+    fi
+    # git_extra="${git_extra} $(git_time_since_last_commit)"
+    local diff_stats="$(git_aggr_numstat)"
+    local untracked_stats="$(nb_untracked_files)"
+    if [[ -n ${diff_stats} ]] || [[ -n ${untracked_stats} ]] ; then
+        git_extra+="|"
+        git_extra+="${diff_stats}"
+
+        git_extra+="\[\033[1;38;5;${c_untracked_stats}m\]${untracked_stats}\[\033[22;39m\]"
+    fi
+
+
+    # Use single-argument form of __git_ps1 to get the text of the
+    # git part of the prompt.
+    if [[ "${git_superproject}" != "" ]] ; then
+        git_part="$(__git_ps1 " %s${git_extra} \[\033[1;4m\]SM\[\033[21;24m\] ")"
+    else
+        git_part="$(__git_ps1 " %s${git_extra}")"
+    fi
+}
+
+#
+# Function to be set as PROMPT_COMMAND.  It sets PS1 with the output of
+# __prompt.
+#
 __set_ps1(){
     local previous_exit_code=$?
 
@@ -401,7 +424,7 @@ git_time_since_last_commit() {
 git_aggr_numstat(){
     # NOTE: The process substitutions `<(...)` are non-posix so if
     # we have `set -o posix`, bash is going to give weird errors
-    # For binary files, git diff --numstat shows
+    # NOTE: For binary files, git diff --numstat shows
     #   -   -   filename.bin
     # and '-' cannot be used as a number.  If that is the case, we change
     # their values to '1'.
