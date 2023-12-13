@@ -398,9 +398,15 @@ __phil_ps1_deal_with_vscode(){
 # This function lists the remote branches that are pointing on HEAD and echos
 # the list of these branches joined by a space.
 get_git_detached_branch(){
-    local branches=($(command git branch -r --points-at HEAD --format='%(refname:short)' 2>/dev/null | command grep -v 'HEAD$') )
+    local branches=($(command git branch --points-at HEAD --format='%(refname:short)' | command grep -v '^(HEAD') $(command git branch -r --points-at HEAD --format='%(refname:short)'))
+    local nb=${#branches[@]}
     local IFS=","
-    echo "${branches[*]}"
+    case ${nb} in
+        0) echo "" ;;
+        1) echo "${branches[0]}" ;;
+        2|3) echo "${branches[*]}" ;;
+        *) echo "${branches[0]},($((nb-1)) more ...)" ;;
+    esac
 }
 
 git_time_since_last_commit() {
