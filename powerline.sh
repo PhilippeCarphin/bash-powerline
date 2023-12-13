@@ -14,6 +14,10 @@ is_git_submodule(){
 }
 
 repos_to_ignore=()
+# For people who track their dot files by making their home directory into a
+# git repository.  Some of the git commands I use for my augmented prompt string
+# look in folders that are not readable by me causing lots of error output and
+# incorrect information in the prompt.
 if [[ -e ~/.config/powerline_repos_to_ignore.txt ]] ; then
     while read repo ; do
         if [[ "${repo}" == '#'* ]] ; then
@@ -26,7 +30,7 @@ fi
 
 __git_ps1_ignore_repo(){
     for r in "${repos_to_ignore[@]}" ; do
-        if [[ "${r}" == "${repo_dir}" ]] ; then
+        if [[ "$(cd -P ${r})" == "${repo_dir}" ]] ; then
             return 0
         fi
     done
@@ -189,6 +193,8 @@ __prompt(){
             c_jobid=233 #127
         fi
     fi
+    local c_git_ignored_repo_fg=${c_git_clean_fg}
+    local c_git_ignored_repo=${c_git_clean}
 
     #
     # Exit code section, followed by host section
