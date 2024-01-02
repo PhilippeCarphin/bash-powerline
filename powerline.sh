@@ -13,23 +13,27 @@ is_git_submodule(){
     [[ -n $(command git rev-parse --show-superproject-working-tree 2>/dev/null) ]]
 }
 
-repos_to_ignore=()
+_powerline_repos_to_ignore=()
 # For people who track their dot files by making their home directory into a
 # git repository.  Some of the git commands I use for my augmented prompt string
 # look in folders that are not readable by me causing lots of error output and
 # incorrect information in the prompt.
-if [[ -e ~/.config/powerline_repos_to_ignore.txt ]] ; then
-    while read repo ; do
-        if [[ "${repo}" == '#'* ]] ; then
-            continue
-        fi
-        repos_to_ignore+=("${repo}")
-    done < ~/.config/powerline_repos_to_ignore.txt
-fi
+_powerline_read_repos_to_ignore(){
+    local repo
+    if [[ -e ~/.config/powerline_repos_to_ignore.txt ]] ; then
+        while read repo ; do
+            if [[ "${repo}" == '#'* ]] ; then
+                continue
+            fi
+            _powerline_repos_to_ignore+=("${repo}")
+        done < ~/.config/powerline_repos_to_ignore.txt
+    fi
+}
+_powerline_read_repos_to_ignore
 
 
 __git_ps1_ignore_repo(){
-    for r in "${repos_to_ignore[@]}" ; do
+    for r in "${_powerline_repos_to_ignore[@]}" ; do
         if [[ "$(cd -P ${r})" == "${repo_dir}" ]] ; then
             return 0
         fi
