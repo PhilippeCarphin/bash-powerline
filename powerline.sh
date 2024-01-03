@@ -1,26 +1,27 @@
 #!/bin/bash
 
-if ! source ~/.git-prompt.sh ; then
-    echo "${BASH_SOURCE[0]} expects ~/.git-prompt.sh to exist.  It can be obtained at 'https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh'.  Ideally the one corresponding to your version of git but I always just get the one from 'master' (this link).  There is always a chance that a new one will use git commands that your version of git does not have."
-    return 1
-fi
-GIT_PS1_SHOWUNTRACKEDFILES=
-GIT_PS1_SHOWUPSTREAM=verbose
-GIT_PS1_SHOWCONFLICTSTATE=1
-GIT_PS1_SHOWDIRTYSTATE=
+_powerline_setup_main(){
+    if ! source ~/.git-prompt.sh ; then
+        echo "${BASH_SOURCE[0]} expects ~/.git-prompt.sh to exist.  It can be obtained at 'https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh'.  Ideally the one corresponding to your version of git but I always just get the one from 'master' (this link).  There is always a chance that a new one will use git commands that your version of git does not have."
+        return 1
+    fi
+    GIT_PS1_SHOWUNTRACKEDFILES=
+    GIT_PS1_SHOWUPSTREAM=verbose
+    GIT_PS1_SHOWCONFLICTSTATE=1
+    GIT_PS1_SHOWDIRTYSTATE=
 
-is_git_submodule(){
-    [[ -n $(command git rev-parse --show-superproject-working-tree 2>/dev/null) ]]
-}
+    # The separator's foreground is made to match the background of the section
+    # to its left and it's background is made to match the section to its right
+    # A ''
+    __powerline_separator="\ue0b0"
 
-_powerline_repos_to_ignore=()
-# For people who track their dot files by making their home directory into a
-# git repository.  Some of the git commands I use for my augmented prompt string
-# look in folders that are not readable by me causing lots of error output and
-# incorrect information in the prompt.
-_powerline_read_repos_to_ignore(){
-    local repo
+    # A ''
+    __powerline_separator_same_color="\ue0b1"
+
+
+    declare -ga _powerline_repos_to_ignore
     if [[ -e ~/.config/powerline_repos_to_ignore.txt ]] ; then
+        local repo
         while read repo ; do
             if [[ "${repo}" == '#'* ]] ; then
                 continue
@@ -28,11 +29,12 @@ _powerline_read_repos_to_ignore(){
             _powerline_repos_to_ignore+=("${repo}")
         done < ~/.config/powerline_repos_to_ignore.txt
     fi
+
+    PS2="\[\033[1;105m\]>\[\033[35;49m\]\[\033[0m\]"
+    PROMPT_COMMAND=_powerline_set_ps1
 }
-_powerline_read_repos_to_ignore
 
-
-__git_ps1_ignore_repo(){
+_powerline_ignore_repo(){
     for r in "${_powerline_repos_to_ignore[@]}" ; do
         if [[ "$(cd -P ${r})" == "${repo_dir}" ]] ; then
             return 0
@@ -42,7 +44,7 @@ __git_ps1_ignore_repo(){
 }
 
 
-nb_untracked_files(){
+_powerline_nb_untracked_files(){
     local untracked=($(command git ls-files ${repo_dir} --others --exclude-standard --directory --no-empty-directory))
     local files=0
     local dirs=0
@@ -63,26 +65,18 @@ nb_untracked_files(){
 #
 # Make the prompt minimal and copy-paste friendly:
 #
-__demo_mode(){
-    if [[ -z "${__demo}" ]] ; then
-        __demo="ON"
+powerline_demo_mode(){
+    if [[ -z "${_powerline_demo_mode}" ]] ; then
+        _powerline_demo_mode="ON"
         __original_ps2="${PS2}"
         PS2=" > "
     else
-        __demo=""
+        _powerline_demo_mode=""
         PS2="${__original_ps2}"
     fi
 }
 
-# The separator's foreground is made to match the background of the section
-# to its left and it's background is made to match the section to its right
-# A ''
-__powerline_separator="\ue0b0"
-
-# A ''
-__powerline_separator_same_color="\ue0b1"
-
-__number_to_background_code(){
+_powerline_number_to_background_code(){
     if [[ -n ${1} ]] ; then
         echo "48;5;${1}"
     else
@@ -90,7 +84,7 @@ __number_to_background_code(){
     fi
 }
 
-__number_to_foreground_code(){
+_powerline_number_to_foreground_code(){
     if [[ -n ${1} ]] ; then
         echo "38;5;${1}"
     else
@@ -102,39 +96,39 @@ __number_to_foreground_code(){
 # Draws a prompt segment without the triangle.  When drawing the prompt,
 # calle this function to draw
 #
-__prompt_section(){
+_powerline_prompt_section(){
     local content=$1
     local bg_section=$2
     local fg_section=$3
 
-    local fg_code=$(__number_to_foreground_code ${fg_section})
-    local bg_code=$(__number_to_background_code ${bg_section})
+    local fg_code=$(_powerline_number_to_foreground_code ${fg_section})
+    local bg_code=$(_powerline_number_to_background_code ${bg_section})
 
     # Print the section's content
     printf "\[\033[${bg_code}m\033[${fg_code}m\]%s" "${content}"
 }
 
-__prompt_triangle(){
+_powerline_prompt_triangle(){
     local bg_left=$1
     local bg_right=$2
-    local bg_code=$(__number_to_background_code ${bg_right})
+    local bg_code=$(_powerline_number_to_background_code ${bg_right})
     if [[ "${bg_left}" == "${bg_right}" ]] ; then
-        local fg_code=$(__number_to_foreground_code 240)
+        local fg_code=$(_powerline_number_to_foreground_code 240)
         printf "\[\033[0m\033[${bg_code}m\033[${fg_code}m\]${__powerline_separator_same_color}\[\033[0m\]"
     else
-        local fg_code=$(__number_to_foreground_code ${bg_left})
+        local fg_code=$(_powerline_number_to_foreground_code ${bg_left})
         printf "\[\033[0m\033[${fg_code}m\033[${bg_code}m\]${__powerline_separator}\[\033[0m\]"
     fi
 }
 
-__git_pwd() {
+_powerline_git_pwd() {
     local repo_dir=$(command git rev-parse --show-toplevel 2>/dev/null)
     local outer=$(basename $repo_dir 2>/dev/null)
     local inner=$(command git rev-parse --show-prefix 2>/dev/null)
     printf "\[\033[1;4m\]${outer}\[\033[22;24m\]${inner:+/${inner}}"
 }
 
-__prompt_git_info(){
+_powerline_git_info(){
     if ! info=($(command git rev-parse --show-toplevel --show-superproject-working-tree 2>/dev/null)) ; then
         return 1
     fi
@@ -142,11 +136,11 @@ __prompt_git_info(){
     git_superproject=${info[1]}
     if ! git_branch=$(command git symbolic-ref HEAD 2>/dev/null) ; then
         git_headless=true
-        git_detached_branch=$(get_git_detached_branch)
+        git_detached_branch=$(_powerline_get_git_detached_branch)
     fi
 }
 
-__prompt(){
+_powerline_generate_prompt(){
     local previous_exit_code=${1}
     if [[ ${__powerline_grayscale} == "" ]] ; then
         local c_host_bg=27
@@ -212,27 +206,27 @@ __prompt(){
         c_exit_code="${c_exit_code_failure}"
         c_exit_code_fg="${c_exit_code_failure_fg}"
     fi
-    __prompt_section " ${previous_exit_code} " "${c_exit_code}" "${c_exit_code_failure_fg}"
-    __prompt_triangle "${c_exit_code}" "${c_host_bg}"
+    _powerline_prompt_section " ${previous_exit_code} " "${c_exit_code}" "${c_exit_code_failure_fg}"
+    _powerline_prompt_triangle "${c_exit_code}" "${c_host_bg}"
 
     #
     # Host section followed by user section
     #
-    __prompt_section "\\h" "${c_host_bg}" "${c_host_fg}"
+    _powerline_prompt_section "\\h" "${c_host_bg}" "${c_host_fg}"
     if [[ -n ${PBS_JOBID} ]] ; then
-        __prompt_triangle "${c_host_bg}" "${c_jobid}"
-        __prompt_section "${PBS_JOBID}" "${c_jobid}"
+        _powerline_prompt_triangle "${c_host_bg}" "${c_jobid}"
+        _powerline_prompt_section "${PBS_JOBID}" "${c_jobid}"
 
-        __prompt_triangle "${c_jobid}" "${c_user}"
+        _powerline_prompt_triangle "${c_jobid}" "${c_user}"
     else
-        __prompt_triangle "${c_host_bg}" "${c_user}"
+        _powerline_prompt_triangle "${c_host_bg}" "${c_user}"
     fi
 
     #
     # User section followed by directory and git section
     #
-    __prompt_section "\\u" "${c_user}"
-    __prompt_triangle "${c_user}" "${c_dir}"
+    _powerline_prompt_section "\\u" "${c_user}"
+    _powerline_prompt_triangle "${c_user}" "${c_dir}"
 
 
     local repo_dir
@@ -240,57 +234,57 @@ __prompt(){
     local git_branch
     local git_headless
     local git_detached_branch
-    # Note: __git_ps1_ignore_repo looks at repo_dir which is set by
-    # __prompt_git_info so the order is important in the && below:
-    if __prompt_git_info ; then
-        if __git_ps1_ignore_repo ; then
+    # Note: _powerline_ignore_repo looks at repo_dir which is set by
+    # _powerline_git_info so the order is important in the && below:
+    if _powerline_git_info ; then
+        if _powerline_ignore_repo ; then
             #
             # Directory section followed by marker for ignored git repo
             #
-            # __prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
-            __prompt_section "$(__git_pwd)" "${c_dir}" "${c_dir_fg}"
-            __prompt_triangle "${c_dir}" "${c_git_ignored_repo}"
+            # _powerline_prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
+            _powerline_prompt_section "$(_powerline_git_pwd)" "${c_dir}" "${c_dir_fg}"
+            _powerline_prompt_triangle "${c_dir}" "${c_git_ignored_repo}"
 
             #
             # Marker for ignored git repo followed by nothing
             #
-            __prompt_section "\033[1m g!\033[21m" "${c_git_ignored_repo}" "${c_git_ignored_repo_fg}"
-            __prompt_triangle "${c_git_ignored_repo}" ""
+            _powerline_prompt_section "\033[1m g!\033[21m" "${c_git_ignored_repo}" "${c_git_ignored_repo_fg}"
+            _powerline_prompt_triangle "${c_git_ignored_repo}" ""
         else
             local git_part
-            __ps1_set_git_part
+            _powerline_set_git_part
 
             #
             # Directory section followed by git section
             #
-            __prompt_section "$(__git_pwd)" "${c_dir}" "${c_dir_fg}"
-            __prompt_triangle "${c_dir}" "${git_color}"
+            _powerline_prompt_section "$(_powerline_git_pwd)" "${c_dir}" "${c_dir_fg}"
+            _powerline_prompt_triangle "${c_dir}" "${git_color}"
 
             #
             # Git section followed by nothing
             #
-            __prompt_section "${git_part}" "${git_color}" "${git_color_fg}"
-            __prompt_triangle "${git_color}" ""
+            _powerline_prompt_section "${git_part}" "${git_color}" "${git_color_fg}"
+            _powerline_prompt_triangle "${git_color}" ""
         fi
     else
         #
         # Directory section followed by nothing
         #
-        __prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
-        __prompt_triangle "${c_dir}" ""
+        _powerline_prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
+        _powerline_prompt_triangle "${c_dir}" ""
     fi
 
     printf "%s" "\n"
-    __prompt_section "$" "${c_next_line}" 15
-    __prompt_triangle "${c_next_line}" ""
+    _powerline_prompt_section "$" "${c_next_line}" 15
+    _powerline_prompt_triangle "${c_next_line}" ""
 }
 
-__ps1_set_git_part(){
+_powerline_set_git_part(){
     local git_extra=""
     if [[ "${git_headless}" == true ]] ; then
         git_color="${c_git_headless}"
         git_color_fg="${c_git_headless_fg}"
-        git_extra="$(get_git_detached_branch)"
+        git_extra="${git_detached_branch}"
         if [[ -n ${git_extra} ]] ; then
             git_extra=" [${git_extra}]"
         fi
@@ -303,14 +297,14 @@ __ps1_set_git_part(){
         git_color="${c_git_clean}"
         git_color_fg="${c_git_clean_fg}"
         c_untracked_stats='15'
-        # git_extra+="\[\033[1;38;5;${c_untracked_stats}m\] $(nb_untracked_files)\[\033[22;39m\]"
+        # git_extra+="\[\033[1;38;5;${c_untracked_stats}m\] $(_powerline_nb_untracked_files)\[\033[22;39m\]"
     else
         git_color="${c_git_dirty}"
         git_color_fg="${c_git_dirty_fg}"
     fi
     # git_extra="${git_extra} $(git_time_since_last_commit)"
-    local diff_stats="$(git_aggr_numstat)"
-    local untracked_stats="$(nb_untracked_files)"
+    local diff_stats="$(_powerline_git_aggr_numstat)"
+    local untracked_stats="$(_powerline_nb_untracked_files)"
     if [[ -n ${diff_stats} ]] || [[ -n ${untracked_stats} ]] ; then
         git_extra+="|"
         git_extra+="${diff_stats}"
@@ -330,9 +324,9 @@ __ps1_set_git_part(){
 
 #
 # Function to be set as PROMPT_COMMAND.  It sets PS1 with the output of
-# __prompt.
+# _powerline_generate_prompt.
 #
-__set_ps1(){
+_powerline_set_ps1(){
     local previous_exit_code=$?
 
     # I want the print otherwise I could get rid of two IF statements:
@@ -351,12 +345,12 @@ __set_ps1(){
     else
         user_had_xtrace=false
     fi
-    __phil_ps1_deal_with_vscode
+    _powerline_deal_with_vscode
 
-    if [[ -n "${__demo}" ]] ; then
+    if [[ -n "${_powerline_demo_mode}" ]] ; then
         PS1="=> ${previous_exit_code}\n\n $ "
     else
-        PS1="$(__prompt ${previous_exit_code}) "
+        PS1="$(_powerline_generate_prompt ${previous_exit_code}) "
     fi
 
     if [[ "${user_had_xtrace}" == true ]] ; then
@@ -366,9 +360,6 @@ __set_ps1(){
         fi
     fi
 }
-
-PS2="\[\033[1;105m\]>\[\033[35;49m\]\[\033[0m\]"
-PROMPT_COMMAND=__set_ps1
 
 ###############################################################################
 #
@@ -390,7 +381,7 @@ PROMPT_COMMAND=__set_ps1
 # If __vsc_status is non-empty, then we are a VSCode integrated shell and we
 # should use __vsc_status as the exit code of the previous command.
 ################################################################################
-__phil_ps1_deal_with_vscode(){
+_powerline_deal_with_vscode(){
     if [[ -n ${__vsc_status-} ]] ; then
         previous_exit_code=${__vsc_status}
     fi
@@ -401,7 +392,7 @@ __phil_ps1_deal_with_vscode(){
 #
 # This function lists the remote branches that are pointing on HEAD and echos
 # the list of these branches joined by a space.
-get_git_detached_branch(){
+_powerline_get_git_detached_branch(){
     local branches=($(command git branch --points-at HEAD --format='%(refname:short)' | command grep -v '^(HEAD') $(command git branch -r --points-at HEAD --format='%(refname:short)'))
     local nb=${#branches[@]}
     local IFS=","
@@ -428,10 +419,10 @@ git_time_since_last_commit() {
     now_unix_timestamp=$(date +%s)
     seconds_since_last_commit=$(($now_unix_timestamp - $last_commit_unix_timestamp))
 
-    format_seconds $seconds_since_last_commit
+    _powerline_format_seconds $seconds_since_last_commit
 }
 
-git_aggr_numstat(){
+_powerline_git_aggr_numstat(){
     # NOTE: The process substitutions `<(...)` are non-posix so if
     # we have `set -o posix`, bash is going to give weird errors
     # NOTE: For binary files, git diff --numstat shows
@@ -473,7 +464,7 @@ git_aggr_numstat(){
 }
 
 
-format_seconds(){
+_powerline_format_seconds(){
 	seconds=$1
     # Totals
     MINUTES=$(($seconds / 60))
@@ -494,3 +485,5 @@ format_seconds(){
     fi
 }
 
+_powerline_setup_main
+unset _powerline_setup_main
