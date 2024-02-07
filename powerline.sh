@@ -261,7 +261,11 @@ _powerline_generate_prompt(){
             #
             # Directory section followed by git section
             #
-            _powerline_prompt_section "$(_powerline_git_pwd)" "${c_dir}" "${c_dir_fg}"
+            if ! [[ -d "$(pwd)" ]] ; then
+                _powerline_prompt_section "(DELETED_DIR)" "${c_dir}" "${c_dir_fg}"
+            else
+                _powerline_prompt_section "$(_powerline_git_pwd)" "${c_dir}" "${c_dir_fg}"
+            fi
             _powerline_prompt_triangle "${c_dir}" "${git_color}"
 
             #
@@ -274,7 +278,11 @@ _powerline_generate_prompt(){
         #
         # Directory section followed by nothing
         #
-        _powerline_prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
+        if ! [[ -d "$(pwd)" ]] ; then
+            _powerline_prompt_section "(DELETED_DIR)" "${c_dir}" "${c_dir_fg}"
+        else
+            _powerline_prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
+        fi
         _powerline_prompt_triangle "${c_dir}" ""
     fi
 
