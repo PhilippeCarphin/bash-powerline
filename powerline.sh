@@ -54,8 +54,8 @@ _powerline_nb_untracked_files(){
     local dirs=0
     for f in "${untracked[@]}" ; do
         case $f in
-            */) ((dirs++)) ;;
-            *) ((files++)) ;;
+            */) ((dirs++)) || : ;;
+            *) ((files++)) || : ;;
         esac
     done
     if [[ "${files}" != 0 ]] || [[ "${dirs}" != 0 ]] ; then
@@ -320,9 +320,9 @@ _powerline_set_git_part(){
     # Use single-argument form of __git_ps1 to get the text of the
     # git part of the prompt.
     if [[ "${git_superproject}" != "" ]] ; then
-        git_part="$(__git_ps1 " %s${git_extra} \[\033[1;4m\]SM\[\033[21;24m\] ")"
+        git_part="$(__git_ps1 " %s${git_extra} \[\033[1;4m\]SM\[\033[21;24m\] " || :)"
     else
-        git_part="$(__git_ps1 " %s${git_extra}")"
+        git_part="$(__git_ps1 " %s${git_extra}" || :)"
     fi
 }
 
@@ -445,18 +445,18 @@ _powerline_git_aggr_numstat(){
             del=1
             ins=1
         fi
-        (( total_del += del))
-        (( total_ins += ins))
-        (( total_files ++ ))
+        (( total_del += del)) || :
+        (( total_ins += ins)) || :
+        (( total_files ++ )) || :
     done < <(command git diff --numstat "$@")
     while read ins del filename ; do
         if [[ "${del}" == "-" ]] && [[ "${ins}" == "-" ]] ; then
             del=1
             ins=1
         fi
-        (( stotal_del += del))
-        (( stotal_ins += ins))
-        (( stotal_files ++ ))
+        (( stotal_del += del)) || :
+        (( stotal_ins += ins)) || :
+        (( stotal_files ++ )) || :
     done < <(command git diff --numstat --staged "$@")
     if ((total_files != 0)) ; then
         printf "\[\033[38;5;${c_unstaged_stats}m\]*(${total_files}f,${total_ins}+,${total_del}-)"
