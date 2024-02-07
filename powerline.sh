@@ -405,7 +405,7 @@ _powerline_deal_with_vscode(){
 # This function lists the remote branches that are pointing on HEAD and echos
 # the list of these branches joined by a space.
 _powerline_get_git_detached_branch(){
-    local branches=($(command git branch --points-at HEAD --format='%(refname:short)' | command grep -v '^(HEAD') $(command git branch -r --points-at HEAD --format='%(refname:short)'))
+    local branches=($(command git branch --points-at HEAD --format='%(refname:short)' | command grep -v '^(HEAD\|^(no') $(command git branch -r --points-at HEAD --format='%(refname:short)'))
     local nb=${#branches[@]}
     local IFS=","
     case ${nb} in
