@@ -21,12 +21,16 @@ _powerline_setup_main(){
 
     declare -ga _powerline_repos_to_ignore
     if [[ -e ~/.config/powerline_repos_to_ignore.txt ]] ; then
-        local repo
+        local line
         while read repo ; do
             if [[ "${repo}" == '#'* ]] ; then
                 continue
             fi
-            _powerline_repos_to_ignore+=("${repo}")
+            local repo_true_path
+            if ! repo_true_path="$(cd -P ${repo} && pwd)" ; then
+                echo "${FUNCNAME[0]}(): WARNING: Could not get true path of repo '${repo}'" >&2
+            fi
+            _powerline_repos_to_ignore+=("${repo_true_path}")
         done < ~/.config/powerline_repos_to_ignore.txt
     fi
 
@@ -36,7 +40,7 @@ _powerline_setup_main(){
 
 _powerline_ignore_repo(){
     for r in "${_powerline_repos_to_ignore[@]}" ; do
-        if [[ "$(cd -P ${r})" == "${repo_dir}" ]] ; then
+        if [[ "$(cd -P ${r} && pwd)" == "${repo_dir}" ]] ; then
             return 0
         fi
     done
