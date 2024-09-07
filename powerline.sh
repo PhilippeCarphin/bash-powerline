@@ -13,13 +13,13 @@ _powerline_setup_main(){
     # The separator's foreground is made to match the background of the section
     # to its left and it's background is made to match the section to its right
     # A ''
-    __powerline_separator="\ue0b0"
+    __powerline_separator="" #\ue0b0"
 
     # A ''
     __powerline_separator_same_color="\ue0b1"
 
 
-    declare -ga _powerline_repos_to_ignore
+    declare -a _powerline_repos_to_ignore
     if [[ -e ~/.config/powerline_repos_to_ignore.txt ]] ; then
         local line
         while read repo ; do
@@ -64,6 +64,7 @@ _powerline_ignore_repo(){
 
 
 _powerline_nb_untracked_files(){
+    local IFS=$'\n'
     local untracked=($(command git ls-files ${repo_dir} --others --exclude-standard --directory --no-empty-directory))
     local files=0
     local dirs=0
@@ -396,14 +397,10 @@ _powerline_set_ps1(){
     local previous_exit_code=$?
 
     local user_had_xtrace
-    if ! [[ -v BASH_POWERLINE_XTRACE ]] ; then
-        if shopt -op xtrace >/dev/null; then
-            user_had_xtrace=true
-            local xtracefd=2
-            if [[ -v BASH_XTRACEFD ]] ; then
-                xtracefd=${BASH_XTRACEFD}
-            fi
-            printf "Disabling xtrace during prompt evaluation\n" >&${xtracefd}
+    if shopt -op xtrace >/dev/null; then
+        user_had_xtrace=true
+        if [[ -z "${BASH_POWERLINE_XTRACE}" ]] ; then
+            printf "Disabling xtrace during prompt evaluation\n"
             set +o xtrace
         else
             user_had_xtrace=false
@@ -420,9 +417,9 @@ _powerline_set_ps1(){
         PS1="$(_powerline_generate_prompt ${previous_exit_code}) "
     fi
 
-    if ! [[ -v BASH_POWERLINE_XTRACE ]] ; then
-        if [[ "${user_had_xtrace}" == true ]] ; then
-            printf "Reenabling xtrace after prompt evaluation\n" >&${xtracefd}
+    if [[ "${user_had_xtrace}" == true ]] ; then
+        if [[ -z "${BASH_POWERLINE_XTRACE}" ]] ; then
+            printf "Reenabling xtrace after prompt evaluation\n"
             set -x
         fi
     fi
