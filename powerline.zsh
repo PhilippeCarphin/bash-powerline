@@ -298,7 +298,7 @@ __prompt(){
         #
         # Directory section followed by nothing
         #
-        __prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
+        __prompt_section "%~" "${c_dir}" "${c_dir_fg}"
         __prompt_triangle "${c_dir}" ""
     fi
 
