@@ -317,7 +317,7 @@ _powerline_set_git_part(){
         git_color="${c_git_dirty}"
         git_color_fg="${c_git_dirty_fg}"
     fi
-    git_extra="${git_extra} $(git_time_since_last_commit)"
+    # git_extra="${git_extra} $(git_time_since_last_commit)"
     local untracked_stats="$(_powerline_nb_untracked_files)"
     if [[ -n ${diff_stats} ]] || [[ -n ${untracked_stats} ]] ; then
         git_extra+="|"
@@ -334,6 +334,36 @@ _powerline_set_git_part(){
     else
         git_part="$(__git_ps1 " %s${git_extra}" || :)"
     fi
+}
+_powerline_set_git_part_lite(){
+    git_part="$(__git_ps1)"
+    if [[ "${git_headless}" == true ]] ; then
+        git_color="${c_git_headless}"
+        git_color_fg="${c_git_headless_fg}"
+        git_extra="${git_detached_branch}"
+        if [[ -n ${git_extra} ]] ; then
+            git_extra=" [${git_extra}]"
+        fi
+        # Override colors in headless state
+        c_untracked_stats='7'
+        c_staged_stats='15'
+        c_unstaged_stats='7'
+    elif [[ "${git_part}" != *'*'* ]] && [[ "${git_part}" != *+* ]] ; then
+        git_color="${c_git_clean}"
+        git_color_fg="${c_git_clean_fg}"
+        c_untracked_stats='15'
+        # git_extra+="\[\033[1;38;5;${c_untracked_stats}m\] $(_powerline_nb_untracked_files)\[\033[22;39m\]"
+    else
+        git_color="${c_git_dirty}"
+        git_color_fg="${c_git_dirty_fg}"
+    fi
+}
+
+powerline_lite_mode(){
+    GIT_PS1_SHOWDIRTYSTATE=1
+    _powerline_set_git_part(){
+        _powerline_set_git_part_lite
+    }
 }
 
 #
