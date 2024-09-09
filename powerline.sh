@@ -293,6 +293,10 @@ _powerline_generate_prompt(){
 
 _powerline_set_git_part(){
     local git_extra=""
+    local diff_stats
+    diff_stats="$(_powerline_git_aggr_numstat)"
+    local clean=$?
+
     if [[ "${git_headless}" == true ]] ; then
         git_color="${c_git_headless}"
         git_color_fg="${c_git_headless_fg}"
@@ -304,8 +308,7 @@ _powerline_set_git_part(){
         c_untracked_stats='7'
         c_staged_stats='15'
         c_unstaged_stats='7'
-    elif command git diff --no-ext-diff --quiet 2>/dev/null \
-      && command git diff --no-ext-diff --cached --quiet 2>/dev/null ; then
+    elif [[ ${clean} == 0 ]] ; then
         git_color="${c_git_clean}"
         git_color_fg="${c_git_clean_fg}"
         c_untracked_stats='15'
@@ -314,8 +317,7 @@ _powerline_set_git_part(){
         git_color="${c_git_dirty}"
         git_color_fg="${c_git_dirty_fg}"
     fi
-    # git_extra="${git_extra} $(git_time_since_last_commit)"
-    local diff_stats="$(_powerline_git_aggr_numstat)"
+    git_extra="${git_extra} $(git_time_since_last_commit)"
     local untracked_stats="$(_powerline_nb_untracked_files)"
     if [[ -n ${diff_stats} ]] || [[ -n ${untracked_stats} ]] ; then
         git_extra+="|"
@@ -473,6 +475,7 @@ _powerline_git_aggr_numstat(){
         printf "\[\033[38;5;${c_staged_stats}m\]+(${stotal_files}f,${stotal_ins}+,${stotal_del}-)"
     fi
     printf "\[\033[39m\]"
+    (( total_files == 0 )) && (( stotal_files == 0))
 }
 
 
