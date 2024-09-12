@@ -127,8 +127,15 @@ _powerline_prompt_triangle(){
 
 _powerline_git_pwd() {
     local repo_dir=$(command git rev-parse --show-toplevel 2>/dev/null)
-    local outer=$(basename $repo_dir 2>/dev/null)
+    local outer=${repo_dir##*/}
     local inner=$(command git rev-parse --show-prefix 2>/dev/null)
+    if ! [[ -w ${repo_dir} ]] ; then
+        owner=$(stat --format=%U $PWD)
+        printf "(${owner})"
+        # Don't know which I like more.  Leaving this here to maybe try later
+        # local container=${repo_dir%%/${outer}}
+        # printf "${container}/"
+    fi
     printf "\[\033[1;4m\]${outer}\[\033[22;24m\]${inner:+/${inner}}"
 }
 
