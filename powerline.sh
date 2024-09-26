@@ -35,8 +35,25 @@ _powerline_setup_main(){
     fi
 
     PS2="\[\033[1;105m\]>\[\033[35;49m\]\[\033[0m\]"
-    PROMPT_COMMAND=_powerline_set_ps1
+
+    _powerline_add_to_prompt_command
 }
+
+#
+# Add to PROMPT_COMMAND in a way that fits the BASH version.  In BASH 5, the
+# variable PROMPT_COMMAND may be an array in which case bash will execute
+# each command one after the other.  This is nice because we can use x+=(y)
+# to add to PROMPT_COMMAND in a nice way.
+_powerline_add_to_prompt_command(){
+    if (( BASH_VERSINFO[0] > 4 )) ; then
+        # Note if x is not an array, x+=("$s") has the effect making x into an array
+        # with the initial value of x assigned to x[0] and assigning "${s}" to x[1].
+        PROMPT_COMMAND+=(_powerline_set_ps1)
+    else
+        PROMPT_COMMAND=${PROMPT_COMMAND:+${PROMPT_COMMAND} ; }_powerline_set_ps1
+    fi
+}
+
 
 _powerline_ignore_repo(){
     for r in "${_powerline_repos_to_ignore[@]}" ; do
