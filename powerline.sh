@@ -48,9 +48,10 @@ _powerline_add_to_prompt_command(){
     if (( BASH_VERSINFO[0] > 4 )) ; then
         # Note if x is not an array, x+=("$s") has the effect making x into an array
         # with the initial value of x assigned to x[0] and assigning "${s}" to x[1].
-        PROMPT_COMMAND+=(_powerline_set_ps1)
+        PROMPT_COMMAND+=()
+        PROMPT_COMMAND=(_powerline_set_ps1 "${PROMPT_COMMAND[@]}")
     else
-        PROMPT_COMMAND=${PROMPT_COMMAND:+${PROMPT_COMMAND} ; }_powerline_set_ps1
+        PROMPT_COMMAND=_powerline_set_ps1${PROMPT_COMMAND:+ ; ${PROMPT_COMMAND}}
     fi
 }
 
@@ -403,6 +404,10 @@ _powerline_set_ps1(){
     # set xtrace to what it is currently.  The other if to set it back
     # could be replaced by simply doing
     #   $reset
+    if ([[ ${PROMPT_COMMAND@a} == *a* ]] && [[ "${PROMPT_COMMAND[0]}" != ${FUNCNAME[0]} ]]) \
+       || [[ ${PROMPT_COMMAND} != _powerline_set_ps1* ]] ; then
+        printf "\033[1;33mWARNING\033[0m: ${FUNCNAME[0]} is not the first item in PROMPT_COMMAND: displayed previous command exit code may be wrong\n"
+    fi
     local user_had_xtrace
     if shopt -op xtrace >/dev/null; then
         user_had_xtrace=true
