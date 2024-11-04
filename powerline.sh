@@ -46,12 +46,9 @@ _powerline_setup_main(){
 # to add to PROMPT_COMMAND in a nice way.
 _powerline_add_to_prompt_command(){
     if (( BASH_VERSINFO[0] > 4 )) ; then
-        # Note if x is not an array, x+=("$s") has the effect making x into an array
-        # with the initial value of x assigned to x[0] and assigning "${s}" to x[1].
-        PROMPT_COMMAND+=()
         PROMPT_COMMAND=(_powerline_set_ps1 "${PROMPT_COMMAND[@]}")
     else
-        PROMPT_COMMAND=_powerline_set_ps1${PROMPT_COMMAND:+ ; ${PROMPT_COMMAND}}
+        PROMPT_COMMAND="_powerline_set_ps1${PROMPT_COMMAND:+ ; ${PROMPT_COMMAND}}"
     fi
 }
 
@@ -398,27 +395,24 @@ powerline_lite_mode(){
 _powerline_set_ps1(){
     local previous_exit_code=$?
 
-    # I want the print otherwise I could get rid of two IF statements:
-    #   local reset="$(shopt -po xtrace)"
-    # which stores in 'reset' the command that I would need to run to
-    # set xtrace to what it is currently.  The other if to set it back
-    # could be replaced by simply doing
-    #   $reset
-    if ([[ ${PROMPT_COMMAND@a} == *a* ]] && [[ "${PROMPT_COMMAND[0]}" != ${FUNCNAME[0]} ]]) \
-       || [[ ${PROMPT_COMMAND} != _powerline_set_ps1* ]] ; then
-        printf "\033[1;33mWARNING\033[0m: ${FUNCNAME[0]} is not the first item in PROMPT_COMMAND: displayed previous command exit code may be wrong\n"
-    fi
     local user_had_xtrace
-    if shopt -op xtrace >/dev/null; then
-        user_had_xtrace=true
-        if ! [[ -v BASH_POWERLINE_XTRACE ]] ; then
-            printf "Disabling xtrace during prompt evaluation\n"
+    if ! [[ -v BASH_POWERLINE_XTRACE ]] ; then
+        if shopt -op xtrace >/dev/null; then
+            user_had_xtrace=true
+            local xtracefd=2
+            if [[ -v BASH_XTRACEFD ]] ; then
+                xtracefd=${BASH_XTRACEFD}
+            fi
+            printf "Disabling xtrace during prompt evaluation\n" >&${xtracefd}
             set +o xtrace
+        else
+            user_had_xtrace=false
         fi
-    else
-        user_had_xtrace=false
     fi
+
     _powerline_deal_with_vscode
+
+    _powerline_check_prompt_command
 
     if [[ -n "${_powerline_demo_mode}" ]] ; then
         PS1="=> ${previous_exit_code}\n\n $ "
@@ -426,10 +420,33 @@ _powerline_set_ps1(){
         PS1="$(_powerline_generate_prompt ${previous_exit_code}) "
     fi
 
-    if [[ "${user_had_xtrace}" == true ]] ; then
-        if ! [[ -v BASH_POWERLINE_XTRACE ]] ; then
-            printf "Reenabling xtrace after prompt evaluation\n"
+    if ! [[ -v BASH_POWERLINE_XTRACE ]] ; then
+        if [[ "${user_had_xtrace}" == true ]] ; then
+            printf "Reenabling xtrace after prompt evaluation\n" >&${xtracefd}
             set -x
+        fi
+    fi
+}
+_powerline_check_prompt_command(){
+    local first
+    if [[ ${PROMPT_COMMAND@a} == *a* ]] ; then
+        first=${PROMPT_COMMAND[0]}
+    else
+        first=${PROMPT_COMMAND}
+    fi
+
+    local warning="\033[1;33mWARNING\033[0m: ${FUNCNAME[0]} is not the first item in PROMPT_COMMAND: displayed previous command exit code may be wrong\n"
+    if [[ -n ${__vsc_status:-} ]] ; then
+        # We are in vscode integrated shell, we need VSCode's function
+        # __vsc_promtp_cmd_original to be first in PROMPT_COMMAND because it uses
+        # $? to grab the exit code.  The rest doesn't matter because VSCode will
+        # have stored it in __vsc_status which we can look at any time.
+        if [[ "${first}" != __vsc_prompt_cmd_original ]] ; then
+            printf "\033[1;33mWARNING\033[0m: ${FUNCNAME[0]}:  We are in VSCode integrated terminal yet the first element of PROMPT_COMMAND is not __vsc_prompt_cmd_original.  The displayed previous command exit code will most likely be wrong\n"
+        fi
+    else
+        if [[ "${first}" != _powerline_set_ps1* ]] ; then
+            printf "\033[1;33mWARNING\033[0m: ${FUNCNAME[0]} is not the first item in PROMPT_COMMAND: displayed previous command exit code may be wrong\n"
         fi
     fi
 }
