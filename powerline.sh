@@ -268,7 +268,7 @@ _powerline_generate_prompt(){
             # Directory section followed by marker for ignored git repo
             #
             # _powerline_prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
-            _powerline_prompt_section "$(_powerline_git_pwd)" "${c_dir}" "${c_dir_fg}"
+            _powerline_prompt_section "\w" "${c_dir}" "${c_dir_fg}"
             _powerline_prompt_triangle "${c_dir}" "${c_git_ignored_repo}"
 
             #
