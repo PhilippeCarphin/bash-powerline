@@ -145,7 +145,7 @@ _powerline_git_pwd() {
     local outer=${repo_dir##*/}
     local inner=$(command git rev-parse --show-prefix 2>/dev/null)
     if ! [[ -w ${repo_dir} ]] ; then
-        owner=$(stat --format=%U $PWD)
+        owner=$(stat --format=%U $(cd -P $PWD && pwd))
         printf "(${owner})"
         # Don't know which I like more.  Leaving this here to maybe try later
         # local container=${repo_dir%%/${outer}}
