@@ -27,7 +27,7 @@ _powerline_setup_main(){
                 continue
             fi
             local repo_true_path
-            if ! repo_true_path="$(cd -P ${repo} && pwd)" ; then
+            if ! repo_true_path="$(command cd -P ${repo} && pwd)" ; then
                 echo "${FUNCNAME[0]}(): WARNING: Could not get true path of repo '${repo}'" >&2
             fi
             _powerline_repos_to_ignore+=("${repo_true_path}")
@@ -55,7 +55,7 @@ _powerline_add_to_prompt_command(){
 
 _powerline_ignore_repo(){
     for r in "${_powerline_repos_to_ignore[@]}" ; do
-        if [[ "$(cd -P ${r} && pwd)" == "${repo_dir}" ]] ; then
+        if [[ "$(command cd -P ${r} && pwd)" == "${repo_dir}" ]] ; then
             return 0
         fi
     done
@@ -141,11 +141,11 @@ _powerline_prompt_triangle(){
 }
 
 _powerline_git_pwd() {
-    local repo_dir=$(command git rev-parse --show-toplevel 2>/dev/null)
+    #local repo_dir=$(command git rev-parse --show-toplevel 2>/dev/null)
     local outer=${repo_dir##*/}
     local inner=$(command git rev-parse --show-prefix 2>/dev/null)
     if ! [[ -w ${repo_dir} ]] ; then
-        owner=$(stat --format=%U $(cd -P $PWD && pwd))
+        owner=$(stat --format=%U $(command cd -P $PWD && pwd))
         printf "(${owner})"
         # Don't know which I like more.  Leaving this here to maybe try later
         # local container=${repo_dir%%/${outer}}
