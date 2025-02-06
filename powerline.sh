@@ -186,7 +186,7 @@ _powerline_git_info(){
 
 _powerline_generate_prompt(){
     local previous_exit_code=${1}
-    local deco_index++=0
+    local deco_index=0
     if [[ ${__powerline_grayscale} == "" ]] ; then
         local c_host_bg=27
         local c_host_fg=
