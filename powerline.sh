@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# An array of strings to decorate your prompt.  An element from this array will
+# be prepended to each section of the prompt in order.  There are 5 sections in
+# the prompt.
+#
+# You can set this array in your shell startup files after sourcing this file.
+#
+# The most likely use of this is probably emojis.  For example
+# `_powerline_decorations=(🍊 🐰 "🐕 " "🐻 " 🎉 🦆)`.  Depending on the ones you
+# use you might want to include a space before or after it.
+_powerline_decorations=()
+
+_powerline_decoration(){
+    echo "${_powerline_decorations[$deco_index]}"
+}
+
 _powerline_setup_main(){
     if ! source ~/.git-prompt.sh ; then
         echo "${BASH_SOURCE[0]} expects ~/.git-prompt.sh to exist.  It can be obtained at 'https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh'.  Ideally the one corresponding to your version of git but I always just get the one from 'master' (this link).  There is always a chance that a new one will use git commands that your version of git does not have."
@@ -125,7 +140,9 @@ _powerline_prompt_section(){
     local bg_code=$(_powerline_number_to_background_code ${bg_section})
 
     # Print the section's content
-    printf "\[\033[${bg_code}m\033[${fg_code}m\]%s" "${content}"
+
+    printf "\[\033[${bg_code}m\033[${fg_code}m\]%s" "$(_powerline_decoration)${content}"
+    ((deco_index++))
 }
 
 _powerline_prompt_triangle(){
@@ -169,6 +186,7 @@ _powerline_git_info(){
 
 _powerline_generate_prompt(){
     local previous_exit_code=${1}
+    local deco_index++=0
     if [[ ${__powerline_grayscale} == "" ]] ; then
         local c_host_bg=27
         local c_host_fg=
@@ -307,6 +325,12 @@ _powerline_generate_prompt(){
             _powerline_prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
         fi
         _powerline_prompt_triangle "${c_dir}" ""
+
+        # If we were in a git repo, we would advance the decoration index by 1
+        # when drawing the git section.  Here we increment it by 1 so that the
+        # next section gets the same decoration whether we are in a git repo or
+        # not.
+        ((deco_index++))
     fi
 
     printf "%s" "\n"
@@ -353,9 +377,9 @@ _powerline_set_git_part(){
     # Use single-argument form of __git_ps1 to get the text of the
     # git part of the prompt.
     if [[ "${git_superproject}" != "" ]] ; then
-        git_part="$(__git_ps1 " %s${git_extra} \[\033[1;4m\]SM\[\033[21;24m\] " || :)"
+        git_part="$(__git_ps1 "%s${git_extra} \[\033[1;4m\]SM\[\033[21;24m\] " || :)"
     else
-        git_part="$(__git_ps1 " %s${git_extra}" || :)"
+        git_part="$(__git_ps1 "%s${git_extra}" || :)"
     fi
 }
 _powerline_set_git_part_lite(){
