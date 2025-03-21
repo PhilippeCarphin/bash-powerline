@@ -34,6 +34,11 @@ _powerline_setup_main(){
     __powerline_separator_same_color="\ue0b1"
 
 
+    # Some people use git to track their dotfiles by makint their HOME directory
+    # into a git repo.  People's homes will usually contain many directories that
+    # are inaccessible to other users thus showing a bunch of `permission denied`
+    # Plus from the HOME, running git status is very long because it has to check
+    # a lot of files.
     declare -ga _powerline_repos_to_ignore
     if [[ -e ~/.config/powerline_repos_to_ignore.txt ]] ; then
         local line
