@@ -34,7 +34,7 @@ _powerline_setup_main(){
     __powerline_separator_same_color="\ue0b1"
 
 
-    declare -a _powerline_repos_to_ignore
+    declare -ga _powerline_repos_to_ignore
     if [[ -e ~/.config/powerline_repos_to_ignore.txt ]] ; then
         local line
         while read repo ; do
