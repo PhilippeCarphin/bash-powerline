@@ -34,6 +34,16 @@ _powerline_setup_main(){
     __powerline_separator_same_color="\ue0b1"
 
 
+    # An array of colors to use for various parts of the prompt.  Use
+    # bash_powerline_theme.grayscale or the function
+    # _powerline_set_prompt_colors_default as an example to create your own themes.
+    # See https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
+    declare -gA _powerline_prompt_colors
+    _powerline_set_prompt_colors_default
+    if [[ -f ~/.bash_powerline_theme ]] ; then
+        source ~/.bash_powerline_theme
+    fi
+
     # Some people use git to track their dotfiles by makint their HOME directory
     # into a git repo.  People's homes will usually contain many directories that
     # are inaccessible to other users thus showing a bunch of `permission denied`
@@ -189,94 +199,84 @@ _powerline_git_info(){
     fi
 }
 
+_powerline_set_prompt_colors_default(){
+    _powerline_prompt_colors[conda_env_bg]=21
+    _powerline_prompt_colors[conda_env_fg]=
+    _powerline_prompt_colors[host_bg]=27
+    _powerline_prompt_colors[host_fg]=
+    if [[ -n ${PBS_JOBID} ]] ; then
+        _powerline_prompt_colors[host_bg]=52 #90
+        _powerline_prompt_colors[jobid]=88 #127
+    fi
+    _powerline_prompt_colors[jobid]=130
+    _powerline_prompt_colors[user]=33
+    _powerline_prompt_colors[dir]=74
+    _powerline_prompt_colors[dir_fg]=15
+    _powerline_prompt_colors[git_headless]=88
+    _powerline_prompt_colors[git_headless_fg]=0
+    _powerline_prompt_colors[git_dirty]=184
+    _powerline_prompt_colors[git_dirty_fg]=0
+    _powerline_prompt_colors[git_clean]=2
+    _powerline_prompt_colors[git_clean_fg]=0
+    _powerline_prompt_colors[git_ignored_repo_fg]=0
+    _powerline_prompt_colors[git_ignored_repo]=2
+    _powerline_prompt_colors[exit_code_success]=34
+    _powerline_prompt_colors[exit_code_failure]=9
+    _powerline_prompt_colors[next_line]=27
+    _powerline_prompt_colors[git_unstaged_stats]=1
+    _powerline_prompt_colors[git_staged_stats]=2
+    _powerline_prompt_colors[git_untracked_stats]=1
+    _powerline_prompt_colors[git_headless_untracked_stats]='7;1'
+    _powerline_prompt_colors[git_headless_staged_stats]=15
+    _powerline_prompt_colors[git_headless_unstaged_stats]=7
+}
+
 _powerline_generate_prompt(){
     local previous_exit_code=${1}
     local deco_index=0
-    if [[ ${__powerline_grayscale} == "" ]] ; then
-        local c_host_bg=27
-        local c_host_fg=
-        local c_jobid=130
-        local c_user=33
-        local c_dir=74
-        local c_dir_fg=15
-        local c_git_headless=88
-        local c_git_headless_fg=0
-        local c_git_dirty=184
-        local c_git_dirty_fg=0
-        local c_git_clean=2
-        local c_git_clean_fg=0
-        local c_exit_code_success=34
-        local c_exit_code_failure=9
-        local c_next_line=27
-        local c_unstaged_stats=1
-        local c_staged_stats=2
-        local c_untracked_stats=1
-        if [[ -n ${PBS_JOBID} ]] ; then
-            c_host_bg=52 #90
-            c_jobid=88 #127
-        fi
-    else
-        local c_host_bg=235
-        local c_host_fg=
-        local c_jobid=130
-        local c_user=236
-        local c_dir=238
-        local c_dir_fg=15
-        local c_git_headless=233
-        local c_git_headless_fg=7
-        local c_git_dirty=240
-        # local c_git_dirty_fg=240
-        local c_git_clean=244
-        # local c_git_clean_fg=240
-        local c_exit_code_success=242
-        local c_exit_code_success_fg=
-        local c_exit_code_failure=233
-        local c_exit_code_failure_fg=7
-        local c_next_line=234
-        local c_unstaged_stats=249
-        local c_staged_stats=249
-        local c_untracked_stats=15
-        if [[ -n ${PBS_JOBID} ]] ; then
-            c_host_bg=233 #90
-            c_jobid=233 #127
-        fi
-    fi
-    local c_git_ignored_repo_fg=${c_git_clean_fg}
-    local c_git_ignored_repo=${c_git_clean}
 
     #
     # Exit code section, followed by host section
+    # followed by maybe conda environment or host
     #
+
     local c_exit_code
     local c_exit_code_fg
     if [[ ${previous_exit_code} == 0 ]] ; then
-        c_exit_code="${c_exit_code_success}"
-        c_exit_code_fg="${c_exit_code_success_fg}"
+        c_exit_code="${_powerline_prompt_colors[exit_code_success]}"
+        c_exit_code_fg="${_powerline_prompt_colors[exit_code_success_fg]}"
     else
-        c_exit_code="${c_exit_code_failure}"
-        c_exit_code_fg="${c_exit_code_failure_fg}"
+        c_exit_code="${_powerline_prompt_colors[exit_code_failure]}"
+        c_exit_code_fg="${_powerline_prompt_colors[exit_code_failure_fg]}"
     fi
-    _powerline_prompt_section " ${previous_exit_code} " "${c_exit_code}" "${c_exit_code_failure_fg}"
-    _powerline_prompt_triangle "${c_exit_code}" "${c_host_bg}"
+    _powerline_prompt_section " ${previous_exit_code} " "${c_exit_code}" "${c_exit_code_fg}"
+
+    if [[ -n ${CONDA_ENV} ]]; then
+        _powerline_prompt_triangle "${c_exit_code}" "${_powerline_prompt_colors[conda_env_bg]}"
+        _powerline_prompt_section "${CONDA_ENV}" "${_powerline_prompt_colors[conda_env_bg]}" "${_powerline_prompt_colors[conda_env_fg]}"
+        _powerline_prompt_triangle "${_powerline_prompt_colors[conda_env_bg]}" "${_powerline_prompt_colors[host_bg]}"
+    else
+        _powerline_prompt_triangle "${c_exit_code}" "${_powerline_prompt_colors[host_bg]}"
+    fi
 
     #
     # Host section followed by user section
     #
-    _powerline_prompt_section "\\h" "${c_host_bg}" "${c_host_fg}"
+    _powerline_prompt_section "\\h" "${_powerline_prompt_colors[host_bg]}" "${_powerline_prompt_colors[host_fg]}"
     if [[ -n ${PBS_JOBID} ]] ; then
-        _powerline_prompt_triangle "${c_host_bg}" "${c_jobid}"
-        _powerline_prompt_section "${PBS_JOBID}" "${c_jobid}"
+        _powerline_prompt_triangle "${_powerline_prompt_colors[host_bg]}" "${_powerline_prompt_colors[jobid]}"
+        _powerline_prompt_section "${PBS_JOBID}" "${_powerline_prompt_colors[jobid]}"
 
-        _powerline_prompt_triangle "${c_jobid}" "${c_user}"
+        _powerline_prompt_triangle "${_powerline_prompt_colors[jobid]}" "${_powerline_prompt_colors[user]}"
     else
-        _powerline_prompt_triangle "${c_host_bg}" "${c_user}"
+        _powerline_prompt_triangle "${_powerline_prompt_colors[host_bg]}" "${_powerline_prompt_colors[user]}"
     fi
 
     #
     # User section followed by directory and git section
     #
-    _powerline_prompt_section "\\u" "${c_user}"
-    _powerline_prompt_triangle "${c_user}" "${c_dir}"
+    _powerline_prompt_section "\\u" "${_powerline_prompt_colors[user]}"
+    _powerline_prompt_triangle "${_powerline_prompt_colors[user]}" "${_powerline_prompt_colors[dir]}"
 
 
     local repo_dir
@@ -291,15 +291,15 @@ _powerline_generate_prompt(){
             #
             # Directory section followed by marker for ignored git repo
             #
-            # _powerline_prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
-            _powerline_prompt_section "\w" "${c_dir}" "${c_dir_fg}"
-            _powerline_prompt_triangle "${c_dir}" "${c_git_ignored_repo}"
+            # _powerline_prompt_section "\\w" "${_powerline_prompt_colors[dir]}" "${_powerline_prompt_colors[dir_fg]}"
+            _powerline_prompt_section "\w" "${_powerline_prompt_colors[dir]}" "${_powerline_prompt_colors[dir_fg]}"
+            _powerline_prompt_triangle "${_powerline_prompt_colors[dir]}" "${_powerline_prompt_colors[git_ignored_repo]}"
 
             #
             # Marker for ignored git repo followed by nothing
             #
-            _powerline_prompt_section "\033[1m g!\033[21m" "${c_git_ignored_repo}" "${c_git_ignored_repo_fg}"
-            _powerline_prompt_triangle "${c_git_ignored_repo}" ""
+            _powerline_prompt_section "\033[1m g!\033[21m" "${_powerline_prompt_colors[git_ignored_repo]}" "${_powerline_prompt_colors[git_ignored_repo_fg]}"
+            _powerline_prompt_triangle "${_powerline_prompt_colors[git_ignored_repo]}" ""
         else
             local git_part
             _powerline_set_git_part
@@ -308,11 +308,11 @@ _powerline_generate_prompt(){
             # Directory section followed by git section
             #
             if ! [[ -d "$(pwd)" ]] ; then
-                _powerline_prompt_section "(DELETED_DIR)" "${c_dir}" "${c_dir_fg}"
+                _powerline_prompt_section "(DELETED_DIR)" "${_powerline_prompt_colors[dir]}" "${_powerline_prompt_colors[dir_fg]}"
             else
-                _powerline_prompt_section "$(_powerline_git_pwd)" "${c_dir}" "${c_dir_fg}"
+                _powerline_prompt_section "$(_powerline_git_pwd)" "${_powerline_prompt_colors[dir]}" "${_powerline_prompt_colors[dir_fg]}"
             fi
-            _powerline_prompt_triangle "${c_dir}" "${git_color}"
+            _powerline_prompt_triangle "${_powerline_prompt_colors[dir]}" "${git_color}"
 
             #
             # Git section followed by nothing
@@ -325,11 +325,11 @@ _powerline_generate_prompt(){
         # Directory section followed by nothing
         #
         if ! [[ -d "$(pwd)" ]] ; then
-            _powerline_prompt_section "(DELETED_DIR)" "${c_dir}" "${c_dir_fg}"
+            _powerline_prompt_section "(DELETED_DIR)" "${_powerline_prompt_colors[dir]}" "${_powerline_prompt_colors[dir_fg]}"
         else
-            _powerline_prompt_section "\\w" "${c_dir}" "${c_dir_fg}"
+            _powerline_prompt_section "\\w" "${_powerline_prompt_colors[dir]}" "${_powerline_prompt_colors[dir_fg]}"
         fi
-        _powerline_prompt_triangle "${c_dir}" ""
+        _powerline_prompt_triangle "${_powerline_prompt_colors[dir]}" ""
 
         # If we were in a git repo, we would advance the decoration index by 1
         # when drawing the git section.  Here we increment it by 1 so that the
@@ -339,42 +339,61 @@ _powerline_generate_prompt(){
     fi
 
     printf "%s" "\n"
-    _powerline_prompt_section "$" "${c_next_line}" 15
-    _powerline_prompt_triangle "${c_next_line}" ""
+    _powerline_prompt_section "$" "${_powerline_prompt_colors[next_line]}" 15
+    _powerline_prompt_triangle "${_powerline_prompt_colors[next_line]}" ""
 }
 
 _powerline_set_git_part(){
     local git_extra=""
-    local diff_stats
-    diff_stats="$(_powerline_git_aggr_numstat)"
+    local c_untracked_stats
+    local c_staged_stats
+    local c_unstaged_stats
+    local diff_stats staged_stats unstaged_stats
+    diff_stats=($(_powerline_git_aggr_numstat))
     local clean=$?
+    if [[ ${diff_stats[0]} == "_" ]] ; then
+        unstaged_stats=""
+    else
+        unstaged_stats=${diff_stats[0]}
+    fi
+    if [[ ${diff_stats[1]} == "_" ]] ; then
+        staged_stats=""
+    else
+        staged_stats=${diff_stats[1]}
+    fi
 
     if [[ "${git_headless}" == true ]] ; then
-        git_color="${c_git_headless}"
-        git_color_fg="${c_git_headless_fg}"
+        git_color="${_powerline_prompt_colors[git_headless]}"
+        git_color_fg="${_powerline_prompt_colors[git_headless_fg]}"
         git_extra="${git_detached_branch}"
         if [[ -n ${git_extra} ]] ; then
             git_extra=" [${git_extra}]"
         fi
         # Override colors in headless state
-        c_untracked_stats='7'
-        c_staged_stats='15'
-        c_unstaged_stats='7'
-    elif [[ ${clean} == 0 ]] ; then
-        git_color="${c_git_clean}"
-        git_color_fg="${c_git_clean_fg}"
-        c_untracked_stats='15'
-        # git_extra+="\[\033[1;38;5;${c_untracked_stats}m\] $(_powerline_nb_untracked_files)\[\033[22;39m\]"
+        # TODO: Add keys git_untracked_stats_headless, git_staged_stats_headless, git_unstaged_stats_headless
+        c_untracked_stats=${_powerline_prompt_colors[git_headless_untracked_stats]}
+        c_staged_stats=${_powerline_prompt_colors[git_headless_staged_stats]}
+        c_unstaged_stats=${_powerline_prompt_colors[git_headless_unstaged_stats]}
     else
-        git_color="${c_git_dirty}"
-        git_color_fg="${c_git_dirty_fg}"
+        c_untracked_stats=${_powerline_prompt_colors[git_untracked_stats]}
+        c_staged_stats=${_powerline_prompt_colors[git_staged_stats]}
+        c_unstaged_stats=${_powerline_prompt_colors[git_unstaged_stats]}
+
+        if [[ ${clean} == 0 ]] ; then
+            git_color="${_powerline_prompt_colors[git_clean]}"
+            git_color_fg="${_powerline_prompt_colors[git_clean_fg]}"
+        else
+            git_color="${_powerline_prompt_colors[git_dirty]}"
+            git_color_fg="${_powerline_prompt_colors[git_dirty_fg]}"
+        fi
     fi
+
+
     # git_extra="${git_extra} $(git_time_since_last_commit)"
     local untracked_stats="$(_powerline_nb_untracked_files)"
     if [[ -n ${diff_stats} ]] || [[ -n ${untracked_stats} ]] ; then
         git_extra+="|"
-        git_extra+="${diff_stats}"
-
+        git_extra+="\[\033[38;5;${c_staged_stats}m\]${staged_stats}\[\033[38;5;${c_unstaged_stats}m\]${unstaged_stats}"
         git_extra+="\[\033[1;38;5;${c_untracked_stats}m\]${untracked_stats}\[\033[22;39m\]"
     fi
 
@@ -387,11 +406,12 @@ _powerline_set_git_part(){
         git_part="$(__git_ps1 "%s${git_extra}" || :)"
     fi
 }
+
 _powerline_set_git_part_lite(){
     git_part="$(__git_ps1)"
     if [[ "${git_headless}" == true ]] ; then
-        git_color="${c_git_headless}"
-        git_color_fg="${c_git_headless_fg}"
+        git_color="${_powerline_prompt_colors[git_headless]}"
+        git_color_fg="${_powerline_prompt_colors[git_headless_fg]}"
         git_extra="${git_detached_branch}"
         if [[ -n ${git_extra} ]] ; then
             git_extra=" [${git_extra}]"
@@ -401,13 +421,13 @@ _powerline_set_git_part_lite(){
         c_staged_stats='15'
         c_unstaged_stats='7'
     elif [[ "${git_part}" != *'*'* ]] && [[ "${git_part}" != *+* ]] ; then
-        git_color="${c_git_clean}"
-        git_color_fg="${c_git_clean_fg}"
+        git_color="${_powerline_prompt_colors[git_clean]}"
+        git_color_fg="${_powerline_prompt_colors[git_clean_fg]}"
         c_untracked_stats='15'
-        # git_extra+="\[\033[1;38;5;${c_untracked_stats}m\] $(_powerline_nb_untracked_files)\[\033[22;39m\]"
+        # git_extra+="\[\033[1;38;5;${_powerline_prompt_colors[untracked_stats]}m\] $(_powerline_nb_untracked_files)\[\033[22;39m\]"
     else
-        git_color="${c_git_dirty}"
-        git_color_fg="${c_git_dirty_fg}"
+        git_color="${_powerline_prompt_colors[git_dirty]}"
+        git_color_fg="${_powerline_prompt_colors[git_dirty_fg]}"
     fi
 }
 
@@ -453,6 +473,7 @@ _powerline_set_ps1(){
         fi
     fi
 }
+
 _powerline_check_prompt_command(){
     local first
     if [[ ${PROMPT_COMMAND@a} == *a* ]] ; then
@@ -571,12 +592,16 @@ _powerline_git_aggr_numstat(){
         (( stotal_files ++ )) || :
     done < <(command git diff --numstat --staged "$@")
     if ((total_files != 0)) ; then
-        printf "\[\033[38;5;${c_unstaged_stats}m\]*(${total_files}f,${total_ins}+,${total_del}-)"
+        printf "*(${total_files}f,${total_ins}+,${total_del}-)"
+    else
+        printf "_"
     fi
+    printf "\n"
     if ((stotal_files != 0)) ; then
-        printf "\[\033[38;5;${c_staged_stats}m\]+(${stotal_files}f,${stotal_ins}+,${stotal_del}-)"
+        printf "+(${stotal_files}f,${stotal_ins}+,${stotal_del}-)"
+    else
+        printf "_"
     fi
-    printf "\[\033[39m\]"
     (( total_files == 0 )) && (( stotal_files == 0))
 }
 

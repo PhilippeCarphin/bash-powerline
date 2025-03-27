@@ -1,0 +1,41 @@
+#!/bin/bash (Editor hint)
+#
+#
+# Theme for Bash Powerline
+# To create your own theme, you can use this as an example
+#
+# If it exists, ~/.bash_powerline_theme will be sourced once by
+# powerline.sh
+#
+# To set attributes, do add them to the background of a section
+# since the number N becomes \[\033[38;5;$Nm\] so adding the attribute
+# will work ";1" will do \[\033[38;5;N;1m\] which will make the
+# text bold.
+#
+# See https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit for the
+# colors.
+
+_powerline_prompt_colors[conda_env_bg]=233
+_powerline_prompt_colors[conda_env_fg]=
+_powerline_prompt_colors[host_bg]=235
+_powerline_prompt_colors[host_fg]=
+_powerline_prompt_colors[jobid]=130
+_powerline_prompt_colors[user]=236
+_powerline_prompt_colors[dir]=238
+_powerline_prompt_colors[dir_fg]=15
+_powerline_prompt_colors[git_headless]=233
+_powerline_prompt_colors[git_headless_fg]=7
+_powerline_prompt_colors[git_dirty]=240
+_powerline_prompt_colors[git_clean]=244
+_powerline_prompt_colors[exit_code_success]=242
+_powerline_prompt_colors[exit_code_success_fg]=
+_powerline_prompt_colors[exit_code_failure]=233
+_powerline_prompt_colors[exit_code_failure_fg]=7
+_powerline_prompt_colors[next_line]=234
+_powerline_prompt_colors[unstaged_stats]=249
+_powerline_prompt_colors[staged_stats]=249
+_powerline_prompt_colors[untracked_stats]=15
+if [[ -n ${PBS_JOBID} ]] ; then
+    _powerline_prompt_colors[host_bg]=233 #90
+    _powerline_prompt_colors[jobid]=233 #127
+fi
