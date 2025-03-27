@@ -20,10 +20,14 @@ _powerline_setup_main(){
         echo "${BASH_SOURCE[0]} expects ~/.git-prompt.sh to exist.  It can be obtained at 'https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh'.  Ideally the one corresponding to your version of git but I always just get the one from 'master' (this link).  There is always a chance that a new one will use git commands that your version of git does not have."
         return 1
     fi
+    # Turn off options these options of GIT_PS1 because we display them ourselves
     GIT_PS1_SHOWUNTRACKEDFILES=
+    GIT_PS1_SHOWDIRTYSTATE=
+
+    # These options could be left to the user.  However nothing is stopping them
+    # from setting them after having sourced this file.
     GIT_PS1_SHOWUPSTREAM=verbose
     GIT_PS1_SHOWCONFLICTSTATE=1
-    GIT_PS1_SHOWDIRTYSTATE=
 
     # The separator's foreground is made to match the background of the section
     # to its left and it's background is made to match the section to its right
@@ -160,6 +164,9 @@ _powerline_prompt_section(){
     ((deco_index++))
 }
 
+# Print a triangle transitioning between the color of the left (previous) section
+# and the color of the right (next) section.
+# When both colors are the same, just pu
 _powerline_prompt_triangle(){
     local bg_left=$1
     local bg_right=$2
