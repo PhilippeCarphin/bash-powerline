@@ -215,7 +215,6 @@ _powerline_set_prompt_colors_default(){
         _powerline_prompt_colors[host_bg]=52 #90
         _powerline_prompt_colors[jobid]=88 #127
     fi
-    _powerline_prompt_colors[jobid]=130
     _powerline_prompt_colors[user]=33
     _powerline_prompt_colors[dir]=74
     _powerline_prompt_colors[dir_fg]=15
