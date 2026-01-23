@@ -48,21 +48,6 @@ _powerline_setup_main(){
         source ~/.bash_powerline_theme
     fi
 
-    local vi_insert
-    printf -v vi_insert "\001\033[1;37;48;5;%sm\002 I \001\033[22;38;5;%s;48;5;%sm\002%s\001\033[0m\002" \
-        ${_powerline_prompt_colors[exit_code_success]} \
-        ${_powerline_prompt_colors[exit_code_success]} \
-        ${_powerline_prompt_colors[next_line]} \
-        ${__powerline_separator}
-    bind "set vi-ins-mode-string ${vi_insert}"
-    local vi_command
-    printf -v vi_command "\001\033[1;37;48;5;%sm\002 N \001\033[22;38;5;%s;48;5;%sm\002%s\001\033[0m\002" \
-        ${_powerline_prompt_colors[git_dirty]} \
-        ${_powerline_prompt_colors[git_dirty]} \
-        ${_powerline_prompt_colors[next_line]} \
-        ${__powerline_separator}
-    bind "set vi-cmd-mode-string ${vi_command}"
-
     # Some people use git to track their dotfiles by makint their HOME directory
     # into a git repo.  People's homes will usually contain many directories that
     # are inaccessible to other users thus showing a bunch of `permission denied`
