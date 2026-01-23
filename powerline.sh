@@ -281,7 +281,7 @@ _powerline_generate_prompt(){
     #
     # User section followed by directory and git section
     #
-    _powerline_prompt_section "\\u" "${_powerline_prompt_colors[user]}"
+    _powerline_prompt_section "\\u" "${_powerline_prompt_colors[user]}" "${_powerline_prompt_colors[user_bg]}"
     _powerline_prompt_triangle "${_powerline_prompt_colors[user]}" "${_powerline_prompt_colors[dir]}"
 
 
@@ -345,7 +345,7 @@ _powerline_generate_prompt(){
     fi
 
     printf "%s" "\n"
-    _powerline_prompt_section "$" "${_powerline_prompt_colors[next_line]}" 15
+    _powerline_prompt_section "$" "${_powerline_prompt_colors[next_line]}" "${_powerline_prompt_colors[next_line_fg]}"
     _powerline_prompt_triangle "${_powerline_prompt_colors[next_line]}" ""
 }
 
