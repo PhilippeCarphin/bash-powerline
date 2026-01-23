@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Exit code
+_powerline_prompt_colors[exit_code_success]=28
+_powerline_prompt_colors[exit_code_failure]=088
+_powerline_prompt_colors[exit_code_failure_fg]=0
+_powerline_prompt_colors[exit_code_success_fg]=0
+
+_powerline_prompt_colors[conda_env_bg]=21
+_powerline_prompt_colors[conda_env_fg]=
+
+# Host
+_powerline_prompt_colors[host_bg]=130
+_powerline_prompt_colors[host_fg]=0
+
+_powerline_prompt_colors[next_line]=${_powerline_prompt_colors[host_bg]}
+_powerline_prompt_colors[next_line_fg]=0
+# Host+job when in a job
+if [[ -n ${PBS_JOBID} ]] ; then
+    _powerline_prompt_colors[host_bg]=52 #90
+    _powerline_prompt_colors[jobid]=88 #127
+fi
+
+_powerline_prompt_colors[user]=172
+_powerline_prompt_colors[user_bg]=0
+
+_powerline_prompt_colors[dir]=214
+_powerline_prompt_colors[dir_fg]=15
+
+_powerline_prompt_colors[git_headless]=88
+_powerline_prompt_colors[git_headless_fg]=0
+_powerline_prompt_colors[git_dirty]=220
+_powerline_prompt_colors[git_dirty_fg]=0
+_powerline_prompt_colors[git_clean]=2
+_powerline_prompt_colors[git_clean_fg]=0
+_powerline_prompt_colors[git_ignored_repo_fg]=0
+_powerline_prompt_colors[git_ignored_repo]=2
+_powerline_prompt_colors[git_unstaged_stats]=1
+_powerline_prompt_colors[git_staged_stats]=2
+_powerline_prompt_colors[git_untracked_stats]=1
+_powerline_prompt_colors[git_headless_untracked_stats]='7;1'
+_powerline_prompt_colors[git_headless_staged_stats]=15
+_powerline_prompt_colors[git_headless_unstaged_stats]=7
+
+
