@@ -9,10 +9,9 @@
 # The most likely use of this is probably emojis.  For example
 # `_powerline_decorations=(🍊 🐰 "🐕 " "🐻 " 🎉 🦆)`.  Depending on the ones you
 # use you might want to include a space before or after it.
-_powerline_decorations=()
 
 _powerline_decoration(){
-    echo "${_powerline_decorations[$deco_index]}"
+    echo "${_powerline_decorations[$deco_index]:-}"
 }
 
 _powerline_setup_main(){
