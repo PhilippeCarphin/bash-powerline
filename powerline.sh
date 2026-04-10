@@ -10,6 +10,15 @@
 # `_powerline_decorations=(🍊 🐰 "🐕 " "🐻 " 🎉 🦆)`.  Depending on the ones you
 # use you might want to include a space before or after it.
 
+# Use a different file descriptor to hide stderr of git commands.  Instead of
+# doing 2>/dev/null, I will do 2>&$_powerline_stderr_fd so that I can change
+# which of the two following lines is commented to see or not see the stderr
+# from git commands (note the `>` and the `&` don't seem like they can be part
+# of a variable's expansion so I couldn't just do _powerline_output=2>/dev/null
+# and do `git some-cmd ${_powerline_output}` and I don't want to use eval's.
+# _powerline_stderr_fd=2
+exec {_powerline_stderr_fd}>/dev/null
+
 _powerline_decoration(){
     echo "${_powerline_decorations[$deco_index]:-}"
 }
@@ -180,9 +189,9 @@ _powerline_prompt_triangle(){
 }
 
 _powerline_git_pwd() {
-    #local repo_dir=$(command git rev-parse --show-toplevel 2>/dev/null)
+    #local repo_dir=$(command git rev-parse --show-toplevel 2>&$_powerline_stderr_fd)
     local outer=${repo_dir##*/}
-    local inner=$(command git rev-parse --show-prefix 2>/dev/null)
+    local inner=$(command git rev-parse --show-prefix 2>&$_powerline_stderr_fd)
     if ! [[ -w ${repo_dir} ]] ; then
         owner=$(stat --format=%U $(command cd -P $PWD && pwd))
         printf "(${owner})"
@@ -194,12 +203,12 @@ _powerline_git_pwd() {
 }
 
 _powerline_git_info(){
-    if ! info=($(command git rev-parse --show-toplevel --show-superproject-working-tree 2>/dev/null)) ; then
+    if ! info=($(command git rev-parse --show-toplevel --show-superproject-working-tree 2>&$_powerline_stderr_fd)) ; then
         return 1
     fi
     repo_dir=${info[0]}
     git_superproject=${info[1]}
-    if ! git_branch=$(command git symbolic-ref HEAD 2>/dev/null) ; then
+    if ! git_branch=$(command git symbolic-ref HEAD 2>&$_powerline_stderr_fd) ; then
         git_headless=true
         git_detached_branch=$(_powerline_get_git_detached_branch)
     fi
@@ -551,13 +560,13 @@ _powerline_get_git_detached_branch(){
 git_time_since_last_commit() {
     # This checks if we are in a repo an that there is a commit
     local repo_info
-    repo_info=$(command git rev-parse --is-inside-work-tree 2>/dev/null)
+    repo_info=$(command git rev-parse --is-inside-work-tree 2>$_powerline_stderr_fd)
     if [ -z "$repo_info" ] ; then
         return
     fi
 
     local last_commit_unix_timestamp now_unix_timestamp seconds_since_last_commit
-    if ! last_commit_unix_timestamp=$(command git log --pretty=format:'%at' -1 2>/dev/null) ; then
+    if ! last_commit_unix_timestamp=$(command git log --pretty=format:'%at' -1 2>$_powerline_stderr_fd) ; then
         return
     fi
     now_unix_timestamp=$(date +%s)
