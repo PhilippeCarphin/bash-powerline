@@ -56,11 +56,14 @@ _powerline_setup_main(){
         source ~/.bash_powerline_theme
     fi
 
-    # Some people use git to track their dotfiles by makint their HOME directory
-    # into a git repo.  People's homes will usually contain many directories that
-    # are inaccessible to other users thus showing a bunch of `permission denied`
-    # Plus from the HOME, running git status is very long because it has to check
-    # a lot of files.
+    # Ignoring certain git repos: many people use git to track their dot files
+    # I prefer to do it by having a git repo somewhere else and have links in
+    # your $HOME pointing to those files.  However some people do it by making
+    # their $HOME be a git repo.  That's doable but when you CD into such a
+    # user's home, a lot of the git commands that bash-powerline does will try
+    # to look in directories like their .ssh/ which leads to a lot of
+    # permission denied errors.  For this reason, we can have a list of
+    # directories that are not to be treated as git repos even thought they are.
     declare -ga _powerline_repos_to_ignore
     if [[ -e ~/.config/powerline_repos_to_ignore.txt ]] ; then
         local line
@@ -86,8 +89,18 @@ _powerline_setup_main(){
 # variable PROMPT_COMMAND may be an array in which case bash will execute
 # each command one after the other.  This is nice because we can use x+=(y)
 # to add to PROMPT_COMMAND in a nice way.
+#
 _powerline_add_to_prompt_command(){
     if (( BASH_VERSINFO[0] > 4 )) ; then
+        # Note that
+        # - When x is not an array, x+=(y) makes x into an array with x[0]
+        #   being the initial value of x and x[1]=y.
+        # - When y is a regular string, ${y[@]} is just the value ${y}
+        # - When z is unset, "${z[@]}" expands to *nothing* (not an empty
+        #   string) so x=(y "${z[@]}") leaves x equal to an array with one
+        #   element x[0]=y.
+        # these three points mean that the following does what we want no
+        # matter what the initial value of PROMPT_COMMAND is.
         PROMPT_COMMAND=(_powerline_set_ps1 "${PROMPT_COMMAND[@]}")
     else
         PROMPT_COMMAND="_powerline_set_ps1${PROMPT_COMMAND:+ ; ${PROMPT_COMMAND}}"
