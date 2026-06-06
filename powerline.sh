@@ -460,7 +460,7 @@ _powerline_set_ps1(){
     local previous_exit_code=$?
 
     local user_had_xtrace
-    if shopt -op xtrace >/dev/null; then
+    if shopt -qo xtrace ; then
         user_had_xtrace=true
         if [[ -z "${BASH_POWERLINE_XTRACE}" ]] ; then
             printf "Disabling xtrace during prompt evaluation\n"
