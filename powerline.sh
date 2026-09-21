@@ -488,7 +488,7 @@ _powerline_set_ps1(){
     _powerline_check_prompt_command
 
     if [[ -n "${_powerline_demo_mode}" ]] ; then
-        PS1="=> ${previous_exit_code}\n\n $ "
+        PS1="exit-code ==> ${previous_exit_code}\n\n $ "
     else
         PS1="$(_powerline_generate_prompt ${previous_exit_code}) "
     fi
